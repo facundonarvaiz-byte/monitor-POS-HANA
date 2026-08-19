@@ -1,0 +1,25 @@
+// =============================================================
+// POS_STAGING — Tabla staging de datos del POS por tienda
+//
+// Propósito : Espejo de la tabla 'article' del PostgreSQL local
+//             de cada tienda (POS), cacheado en HANA para que
+//             el monitor Python solo necesite una conexión.
+// Script    : cache_pos_to_hana.xsjs  /  update_tienda.xsjs
+// PK        : (TIENDA, EAN)
+// =============================================================
+
+table.schemaName = "Z_NCR_CO";
+table.tableType  = COLUMNSTORE;
+
+table.columns =
+[
+    { name = "TIENDA";             sqlType = NVARCHAR; length = 10;  nullable = false; comment = "Código de tienda, ej: E802"; },
+    { name = "EAN";                sqlType = NVARCHAR; length = 50;  nullable = false; comment = "Código de barras (article.article_number)"; },
+    { name = "SKU";                sqlType = NVARCHAR; length = 50;  nullable = false; comment = "Código SAP / clave de join con HANA (article.mainplunumber)"; },
+    { name = "DESCRIPCION";        sqlType = NVARCHAR; length = 200; nullable = true;  comment = "Descripción del artículo (article.designation con fallback al principal)"; },
+    { name = "PRECIO_POS";         sqlType = DECIMAL;  precision = 18; scale = 2; nullable = true; comment = "Precio vigente en el POS (article.price con fallback al principal)"; },
+    { name = "RESTRINGIDO_VENTA";  sqlType = NVARCHAR; length = 1;   nullable = true;  comment = "Restricción de venta: 0=puede vender, 1=restringido (ext_structure_code pos 17)"; },
+    { name = "FECHA_CARGA";        sqlType = TIMESTAMP; nullable = false; comment = "Timestamp de la última ejecución del cache para esta tienda"; }
+];
+
+table.primaryKey.pkcolumns = ["TIENDA", "EAN"];

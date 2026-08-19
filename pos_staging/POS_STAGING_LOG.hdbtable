@@ -1,0 +1,21 @@
+// =============================================================
+// POS_STAGING_LOG — Log de ejecuciones del cache POS → HANA
+//
+// Un registro por tienda por ejecución.
+// =============================================================
+
+table.schemaName = "Z_NCR_CO";
+table.tableType  = COLUMNSTORE;
+
+table.columns =
+[
+    { name = "ID";          sqlType = INTEGER;   nullable = false; comment = "Clave surrogate (GENERATED ALWAYS AS IDENTITY — asignar en INSERT)"; },
+    { name = "TIENDA";      sqlType = NVARCHAR;  length = 10;  nullable = true; comment = "Código de tienda procesada"; },
+    { name = "INICIO";      sqlType = TIMESTAMP; nullable = true; comment = "Timestamp de inicio del proceso para esta tienda"; },
+    { name = "FIN";         sqlType = TIMESTAMP; nullable = true; comment = "Timestamp de fin del proceso para esta tienda"; },
+    { name = "REGISTROS";   sqlType = INTEGER;   nullable = true; comment = "Cantidad de filas upserted en POS_STAGING"; },
+    { name = "ESTADO";      sqlType = NVARCHAR;  length = 10;  nullable = true; comment = "OK | ERROR"; },
+    { name = "MENSAJE";     sqlType = NVARCHAR;  length = 500; nullable = true; comment = "Detalle adicional o mensaje de error"; }
+];
+
+table.primaryKey.pkcolumns = ["ID"];

@@ -1,0 +1,1839 @@
+WEBVTT
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/7-0
+00:00:03.785 --> 00:00:10.898
+<v Dantur, Alejandra (Externo - Sapiensys)>y se bajan cada tienda. Entonces,
+y fíjate que son 281 tiendas</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/6-0
+00:00:05.265 --> 00:00:05.825
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/7-1
+00:00:10.898 --> 00:00:19.141
+<v Dantur, Alejandra (Externo - Sapiensys)>supermercados, que esto lo paso de largo,
+y tenemos 53 tiendas para MDH.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/7-2
+00:00:19.141 --> 00:00:26.705
+<v Dantur, Alejandra (Externo - Sapiensys)>En Colombia van a ser 14,
+o sea que es una cantidad muy manejable.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/9-0
+00:00:27.585 --> 00:00:34.486
+<v Dantur, Alejandra (Externo - Sapiensys)>Pero lo que quiero decir con esto es que
+vos podrías descargar, ya sea del postgre,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/9-1
+00:00:34.486 --> 00:00:39.497
+<v Dantur, Alejandra (Externo - Sapiensys)>ya sea del hash PLU.
+Entiendo que acá lo hacen desde el hash</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/9-2
+00:00:39.497 --> 00:00:39.825
+<v Dantur, Alejandra (Externo - Sapiensys)>PLU.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/10-0
+00:00:41.265 --> 00:00:46.221
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Podrías bajarte? Ay,
+yo miro esto y no sabes cómo sufro.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/10-1
+00:00:46.221 --> 00:00:51.604
+<v Dantur, Alejandra (Externo - Sapiensys)>Esto es un desastre, es un desastre,
+un desastre, un desastre.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/10-2
+00:00:51.604 --> 00:00:53.825
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Cómo está desde qué arco?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/11-0
+00:00:53.185 --> 00:00:57.594
+<v Narvaiz, Facundo (Externos - Sapiensys)>No, sí, esa es la otra forma,
+no de guardarlo en Jaña todas las cosas</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/11-1
+00:00:57.594 --> 00:01:02.065
+<v Narvaiz, Facundo (Externos - Sapiensys)>en un horario y de ahí empezar a comparar
+y va a ser mucho más rápido.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/12-0
+00:01:02.705 --> 00:01:08.062
+<v Dantur, Alejandra (Externo - Sapiensys)>Sí, es que eso es lo que tenés que hacer,
+porque a ver,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/12-1
+00:01:08.062 --> 00:01:15.331
+<v Dantur, Alejandra (Externo - Sapiensys)>esta parte funciona como una señal de
+alarma de cuáles son las tiendas cuyo</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/12-2
+00:01:15.331 --> 00:01:22.505
+<v Dantur, Alejandra (Externo - Sapiensys)>consumer están dando bien o cuyo consumer
+están dando mal. No necesitamos.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/13-0
+00:01:22.625 --> 00:01:28.050
+<v Dantur, Alejandra (Externo - Sapiensys)>En esta vista, que es superimportante,
+no necesitamos tiempo real,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/13-1
+00:01:28.050 --> 00:01:34.364
+<v Dantur, Alejandra (Externo - Sapiensys)>no nos cambia nada, no nos suma. ¿Ok?
+Yo con saber que esta es la información</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/13-2
+00:01:34.364 --> 00:01:38.979
+<v Dantur, Alejandra (Externo - Sapiensys)>de esta mañana, a mí me alcanza.
+Yo te diría que, a ver,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/13-3
+00:01:38.979 --> 00:01:42.865
+<v Dantur, Alejandra (Externo - Sapiensys)>cualquier diferencia para mí está mal acá,
+¿no?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/14-0
+00:01:43.025 --> 00:01:49.023
+<v Dantur, Alejandra (Externo - Sapiensys)>Debería haber ninguna,
+pero una diferencia que está debajo de 50,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/14-1
+00:01:49.023 --> 00:01:54.839
+<v Dantur, Alejandra (Externo - Sapiensys)>yo me la banco, digamos,
+porque puede ser un día que qué sé yo,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/14-2
+00:01:54.839 --> 00:01:59.474
+<v Dantur, Alejandra (Externo - Sapiensys)>viste nada,
+un arrastre del consumer que anda mal.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/14-3
+00:01:59.474 --> 00:02:02.745
+<v Dantur, Alejandra (Externo - Sapiensys)>Ahora 1211 diferencias de precio es.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/15-0
+00:02:02.865 --> 00:02:09.841
+<v Dantur, Alejandra (Externo - Sapiensys)>Grave y esto en general es el resultado
+de un consumer muy mal manejado. A ver,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/15-1
+00:02:09.841 --> 00:02:16.817
+<v Dantur, Alejandra (Externo - Sapiensys)>si vos entras, entonces, como te digo,
+esto debe haber corrido a las 3:00 de la</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/15-2
+00:02:16.817 --> 00:02:19.345
+<v Dantur, Alejandra (Externo - Sapiensys)>mañana, pero a mí me alcanza.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/16-0
+00:02:20.785 --> 00:02:27.296
+<v Dantur, Alejandra (Externo - Sapiensys)>Me sirve y yo ya tengo claramente la un
+una cosmovisión de que tengo 6 tiendas,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/16-1
+00:02:27.296 --> 00:02:33.888
+<v Dantur, Alejandra (Externo - Sapiensys)>por lo menos 5 tiendas que están muy mal.
+Sí, que además yo ya sé que son estas,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/16-2
+00:02:33.888 --> 00:02:38.609
+<v Dantur, Alejandra (Externo - Sapiensys)>no es casual, o sea,
+no me sorprende nada de lo que estoy</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/16-3
+00:02:38.609 --> 00:02:39.585
+<v Dantur, Alejandra (Externo - Sapiensys)>viendo, o k.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/18-0
+00:02:40.225 --> 00:02:45.422
+<v Dantur, Alejandra (Externo - Sapiensys)>Ahora, si entro acá a ver el detalle,
+es importante que vos puedas entrar acá</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/18-1
+00:02:45.422 --> 00:02:49.419
+<v Dantur, Alejandra (Externo - Sapiensys)>porque esto es una porquería desde la
+interfaz y qué sé yo,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/17-0
+00:02:47.905 --> 00:02:48.265
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sure.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/18-2
+00:02:49.419 --> 00:02:54.149
+<v Dantur, Alejandra (Externo - Sapiensys)>ya de por sí me vuelvo loca,
+que cada vez que entro tengo que agrandar</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/18-3
+00:02:54.149 --> 00:02:59.145
+<v Dantur, Alejandra (Externo - Sapiensys)>la cantidad de elementos que me muestra.
+No lo puedo ni ni procesar a eso.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/20-0
+00:02:59.745 --> 00:03:02.807
+<v Dantur, Alejandra (Externo - Sapiensys)>Bueno,
+pero fíjate que acá me hace el</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/20-1
+00:03:02.807 --> 00:03:09.252
+<v Dantur, Alejandra (Externo - Sapiensys)>desagregado renglón por renglón de cuáles
+son las 1211 diferencias que tiene el</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/20-2
+00:03:09.252 --> 00:03:14.327
+<v Dantur, Alejandra (Externo - Sapiensys)>3170 ISIS Santiago del Estero.
+Acá hay una columna que, a ver,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/19-0
+00:03:12.145 --> 00:03:12.585
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/20-3
+00:03:14.327 --> 00:03:19.000
+<v Dantur, Alejandra (Externo - Sapiensys)>precio SAP vendríamos a ser nosotros,
+debería decir Jana,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/20-4
+00:03:19.000 --> 00:03:22.625
+<v Dantur, Alejandra (Externo - Sapiensys)>pero para ellos Jana y SAP son
+indivisibles.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/22-0
+00:03:23.345 --> 00:03:29.751
+<v Dantur, Alejandra (Externo - Sapiensys)>precio post es lo que o sea esta columna
+preciosa vos la tomás de imagen post la</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/22-1
+00:03:29.751 --> 00:03:35.761
+<v Dantur, Alejandra (Externo - Sapiensys)>tomás de la vista esa que me estás
+contando a mí Okay ahí la tomás Espérate</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/21-0
+00:03:34.625 --> 00:03:34.945
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sin.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/22-2
+00:03:35.761 --> 00:03:42.245
+<v Dantur, Alejandra (Externo - Sapiensys)>que te voy a mandar esta pantalla porque
+después la columna que sigue precio post</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/22-3
+00:03:42.245 --> 00:03:47.385
+<v Dantur, Alejandra (Externo - Sapiensys)>es la que estás leyendo vos con el con la
+postgre o lo que fuera</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/23-0
+00:03:47.985 --> 00:03:53.127
+<v Dantur, Alejandra (Externo - Sapiensys)>Luego,
+precio a SLS no nos interesa en Colombia,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/23-1
+00:03:53.127 --> 00:04:01.733
+<v Dantur, Alejandra (Externo - Sapiensys)>eso es algo que interesaba en Argentina
+porque Argentina tenía un tercer servidor</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/23-2
+00:04:01.733 --> 00:04:06.665
+<v Dantur, Alejandra (Externo - Sapiensys)>que manejaba los flejes. Olvídate,
+esa columna</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/24-0
+00:04:06.865 --> 00:04:12.431
+<v Dantur, Alejandra (Externo - Sapiensys)>Un aprecio a SLS no sirve.
+Después tenés yo by the number y tipo de</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/24-1
+00:04:12.431 --> 00:04:18.571
+<v Dantur, Alejandra (Externo - Sapiensys)>3 campos que salen de también de la vista
+que vos me dijiste, imagen post.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/24-2
+00:04:18.571 --> 00:04:24.792
+<v Dantur, Alejandra (Externo - Sapiensys)>En esa imagen post nosotros ponemos
+información de trazabilidad en donde no</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/24-3
+00:04:24.792 --> 00:04:26.265
+<v Dantur, Alejandra (Externo - Sapiensys)>solamente sabemos.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/25-0
+00:04:27.425 --> 00:04:32.643
+<v Dantur, Alejandra (Externo - Sapiensys)>¿De dónde sale?
+Digamos qué precio debería tener el post,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/25-1
+00:04:32.643 --> 00:04:37.590
+<v Dantur, Alejandra (Externo - Sapiensys)>sino que además vemos o rastreamos de
+dónde salió. Sí,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/25-2
+00:04:37.590 --> 00:04:44.067
+<v Dantur, Alejandra (Externo - Sapiensys)>y ese de dónde salió sí está en esa,
+en esa vista que estamos hablando,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/25-3
+00:04:44.067 --> 00:04:46.945
+<v Dantur, Alejandra (Externo - Sapiensys)>donde tenés el yo by the number.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/27-0
+00:04:47.585 --> 00:04:51.573
+<v Dantur, Alejandra (Externo - Sapiensys)>el tipo de cambio que lo generó y la
+fecha o el timestamp.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/27-1
+00:04:51.573 --> 00:04:56.912
+<v Dantur, Alejandra (Externo - Sapiensys)>Vos dirás por qué es importante eso,
+es súper importante porque vos fijate que</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/27-2
+00:04:56.912 --> 00:05:00.426
+<v Dantur, Alejandra (Externo - Sapiensys)>y todo esto nada es en tiempo real,
+todo histórico,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/27-3
+00:05:00.426 --> 00:05:05.021
+<v Dantur, Alejandra (Externo - Sapiensys)>pero fíjate que yo acá veo,
+te das cuenta que volví para atrás y me</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/27-4
+00:05:05.021 --> 00:05:08.265
+<v Dantur, Alejandra (Externo - Sapiensys)>devolvió a supermercados.
+Esta interfaz escala.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/28-0
+00:05:08.385 --> 00:05:12.888
+<v Dantur, Alejandra (Externo - Sapiensys)>Calamitosa. Bueno,
+estas 1211 diferencias de precio que</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/26-0
+00:05:09.585 --> 00:05:10.065
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/28-1
+00:05:12.888 --> 00:05:19.321
+<v Dantur, Alejandra (Externo - Sapiensys)>tiene el Easy de Santiago del Estero.
+Cuando yo me voy a ver las diferencias de</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/28-2
+00:05:19.321 --> 00:05:25.432
+<v Dantur, Alejandra (Externo - Sapiensys)>precio, que claramente están. O sea,
+si vos hoy te parás en la cola y vas a</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/28-3
+00:05:25.432 --> 00:05:31.945
+<v Dantur, Alejandra (Externo - Sapiensys)>pagar el KIS Bidet cromo, te van a cobrar,
+te van a cobrar cero en vez de 37170.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/29-0
+00:05:32.225 --> 00:05:36.147
+<v Dantur, Alejandra (Externo - Sapiensys)>Por decirte algo,
+en realidad el precio post dice cero</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/29-1
+00:05:36.147 --> 00:05:40.996
+<v Dantur, Alejandra (Externo - Sapiensys)>porque es un alta que nunca entró.
+Esto es un alta que nunca entró.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/29-2
+00:05:40.996 --> 00:05:46.843
+<v Dantur, Alejandra (Externo - Sapiensys)>Pero fíjate que la fecha de envío en SR
+ya me trae a mí un montón de información,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/29-3
+00:05:46.843 --> 00:05:51.905
+<v Dantur, Alejandra (Externo - Sapiensys)>porque lo que me está claramente
+expresando es que el día 10 de junio.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/31-0
+00:05:52.065 --> 00:05:56.660
+<v Dantur, Alejandra (Externo - Sapiensys)>El consumer se fue a dormir y no consumió.
+Sí, o sea,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/31-1
+00:05:56.660 --> 00:06:00.915
+<v Dantur, Alejandra (Externo - Sapiensys)>Jana está convencido que el 10 del 6 el
+consumer.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/30-0
+00:05:58.625 --> 00:05:59.025
+<v Narvaiz, Facundo (Externos - Sapiensys)>Call.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/31-2
+00:06:00.915 --> 00:06:07.807
+<v Dantur, Alejandra (Externo - Sapiensys)>Entonces estoy segura que si miramos todo,
+bueno, puede que aparezca otra fecha,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/31-3
+00:06:07.807 --> 00:06:10.785
+<v Dantur, Alejandra (Externo - Sapiensys)>claro está, pero es un problema. o.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/33-0
+00:06:10.945 --> 00:06:16.493
+<v Dantur, Alejandra (Externo - Sapiensys)>Originado el día 10 del 6,
+todos los movimientos del 10 del 6 no</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/32-0
+00:06:13.425 --> 00:06:13.985
+<v Narvaiz, Facundo (Externos - Sapiensys)>Salud.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/33-1
+00:06:16.493 --> 00:06:21.955
+<v Dantur, Alejandra (Externo - Sapiensys)>fueron consumidos por el post.
+Una vergüenza, no una vergüenza.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/33-2
+00:06:21.955 --> 00:06:28.782
+<v Dantur, Alejandra (Externo - Sapiensys)>Y por eso es tan importante que cuando
+Jana aporta, cómo debería verse el dato,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/33-3
+00:06:28.782 --> 00:06:30.745
+<v Dantur, Alejandra (Externo - Sapiensys)>que además lo que Jana.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/34-0
+00:06:30.865 --> 00:06:36.220
+<v Dantur, Alejandra (Externo - Sapiensys)>Porta es incuestionable porque sale de
+SAP. No es una cosa discutible. O sea,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/34-1
+00:06:36.220 --> 00:06:42.055
+<v Dantur, Alejandra (Externo - Sapiensys)>como Hannah dice que el precio es 80000 y
+66000 es lo que hay en el post. No, señor,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/34-2
+00:06:42.055 --> 00:06:45.762
+<v Dantur, Alejandra (Externo - Sapiensys)>que deben estar cobrándole esto a la
+gente. Te aviso.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/34-3
+00:06:45.762 --> 00:06:50.705
+<v Dantur, Alejandra (Externo - Sapiensys)>Lo que significa acá es que este 80000 es
+correcto, es lo que dice SAP.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/35-0
+00:06:51.185 --> 00:06:54.881
+<v Dantur, Alejandra (Externo - Sapiensys)>Y fíjate otra cosa más, vos me dirás,
+bueno,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/35-1
+00:06:54.881 --> 00:07:00.876
+<v Dantur, Alejandra (Externo - Sapiensys)>pero si el cajero se da cuenta que el
+precio no es 66 sino que es 80000,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/35-2
+00:07:00.876 --> 00:07:05.967
+<v Dantur, Alejandra (Externo - Sapiensys)>¿por qué no hacen un push?
+Pero si el push lo hubieran hecho,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/35-3
+00:07:05.967 --> 00:07:11.305
+<v Dantur, Alejandra (Externo - Sapiensys)>yo lo vería acá. ¿Por qué lo vería?
+Porque la vista imagen post.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/36-0
+00:07:11.585 --> 00:07:15.185
+<v Dantur, Alejandra (Externo - Sapiensys)>Con información de trazabilidad que vos
+estás consumiendo.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/37-0
+00:07:16.305 --> 00:07:20.225
+<v Dantur, Alejandra (Externo - Sapiensys)>Registra el último movimiento para ese
+material,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/37-1
+00:07:20.225 --> 00:07:25.745
+<v Dantur, Alejandra (Externo - Sapiensys)>sea este por push o sea por envío
+nocturno. Flor, esto, por ejemplo,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/37-2
+00:07:25.745 --> 00:07:32.225
+<v Dantur, Alejandra (Externo - Sapiensys)>si vos ves el historial de movimientos,
+lo que vos ves acá para cada material es</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/37-3
+00:07:32.225 --> 00:07:35.025
+<v Dantur, Alejandra (Externo - Sapiensys)>el renglón de más arriba, es decir.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/38-0
+00:07:35.185 --> 00:07:40.954
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Cuál fue el último movimiento? Ahora,
+si yo voy en este momento mientras</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/38-1
+00:07:40.954 --> 00:07:42.825
+<v Dantur, Alejandra (Externo - Sapiensys)>hablamos y hago un push.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/39-0
+00:07:42.625 --> 00:07:45.745
+<v Narvaiz, Facundo (Externos - Sapiensys)>Si mandan el push a él, no aparecería ahí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/40-0
+00:07:46.865 --> 00:07:54.625
+<v Dantur, Alejandra (Externo - Sapiensys)>Exacto Bueno ahí vamos Exacto de hecho
+fíjate que yo lo voy a hacer al Push</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/40-1
+00:07:54.625 --> 00:08:02.998
+<v Dantur, Alejandra (Externo - Sapiensys)>ahora a ver voy a hacer un Push para este
+cku yo puedo hacer eso nadie nadie sabe</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/40-2
+00:08:02.998 --> 00:08:06.265
+<v Dantur, Alejandra (Externo - Sapiensys)>Pero yo lo puedo hacer Open file</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/41-0
+00:08:07.625 --> 00:08:09.585
+<v Dantur, Alejandra (Externo - Sapiensys)>Yo tengo un bus local.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/42-0
+00:08:10.625 --> 00:08:18.252
+<v Dantur, Alejandra (Externo - Sapiensys)>En algún lugar y lo voy a hacer al push.
+Claro que no, exactamente no. A ver,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/42-1
+00:08:18.252 --> 00:08:25.781
+<v Dantur, Alejandra (Externo - Sapiensys)>perdón, disculpas. Acá tengo alguna duda,
+pero push local este que está acá.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/42-2
+00:08:25.781 --> 00:08:32.625
+<v Dantur, Alejandra (Externo - Sapiensys)>Acá tengo alguna duda que no sabría qué
+local estamos viendo, el 170.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/43-0
+00:08:32.705 --> 00:08:33.025
+<v Dantur, Alejandra (Externo - Sapiensys)>Yeah.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/44-0
+00:08:34.545 --> 00:08:36.625
+<v Dantur, Alejandra (Externo - Sapiensys)>Pero no es acá, es acá, perdón.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/45-0
+00:08:40.385 --> 00:08:44.865
+<v Dantur, Alejandra (Externo - Sapiensys)>170 y el material se llama.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/46-0
+00:08:45.985 --> 00:08:48.145
+<v Dantur, Alejandra (Externo - Sapiensys)>Es este que está acá, lo copio.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/47-0
+00:08:49.425 --> 00:08:54.449
+<v Dantur, Alejandra (Externo - Sapiensys)>A ver, vamos a ver qué pasa,
+porque ahora te voy a mostrar en dónde sí</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/47-1
+00:08:54.449 --> 00:08:58.765
+<v Dantur, Alejandra (Externo - Sapiensys)>lo vas a ver al push,
+que ahí es donde ellos están usando el</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/47-2
+00:08:58.765 --> 00:09:04.497
+<v Dantur, Alejandra (Externo - Sapiensys)>postre. Esta es una de las aplicaciones,
+a mi juicio, la más útil. Te aviso, no,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/47-3
+00:09:04.497 --> 00:09:09.025
+<v Dantur, Alejandra (Externo - Sapiensys)>pero bueno, entonces ahí va,
+voy a hacer push solamente de eso.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/48-0
+00:09:10.225 --> 00:09:11.145
+<v Dantur, Alejandra (Externo - Sapiensys)>Está acá.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/49-0
+00:09:14.785 --> 00:09:19.112
+<v Dantur, Alejandra (Externo - Sapiensys)>Esperaste que le digo que es en HD cero,
+esto es un push retrucho que yo no</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/49-1
+00:09:19.112 --> 00:09:21.105
+<v Dantur, Alejandra (Externo - Sapiensys)>debería estar haciendo, pero bueno.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/51-0
+00:09:22.385 --> 00:09:29.124
+<v Dantur, Alejandra (Externo - Sapiensys)>El push no cambia datos. Listo,
+ahí yo ya hice el push para el 170.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/51-1
+00:09:29.124 --> 00:09:35.963
+<v Dantur, Alejandra (Externo - Sapiensys)>Espera, volvamos un minutito acá.
+Es esto para la tienda 170. A ver,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/51-2
+00:09:35.963 --> 00:09:42.305
+<v Dantur, Alejandra (Externo - Sapiensys)>puede que acá veamos aparecer la palabra
+push y el acá, perdón.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/50-0
+00:09:38.425 --> 00:09:38.545
+<v Narvaiz, Facundo (Externos - Sapiensys)>What?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/52-0
+00:09:42.385 --> 00:09:49.225
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Y el esto que puede que nos aparezca eso
+acá? Yo no lo sé. A ver,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/52-1
+00:09:49.225 --> 00:09:55.145
+<v Dantur, Alejandra (Externo - Sapiensys)>sé que la el precio post viene descargado
+una vez al día.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/53-0
+00:09:56.145 --> 00:09:59.697
+<v Dantur, Alejandra (Externo - Sapiensys)>Eso lo sé.
+Lo que no sé es si lo que ellos leen de</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/53-1
+00:09:59.697 --> 00:10:03.249
+<v Dantur, Alejandra (Externo - Sapiensys)>lo data de Jana,
+que son todas las demás columnas,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/53-2
+00:10:03.249 --> 00:10:07.985
+<v Dantur, Alejandra (Externo - Sapiensys)>esas también las actualizan una vez al
+día. Eso es lo que no sé yo.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/54-0
+00:10:08.865 --> 00:10:13.770
+<v Dantur, Alejandra (Externo - Sapiensys)>Sí, ellos leen del postgre,
+precio post y precio a SLS que a vos no</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/54-1
+00:10:13.770 --> 00:10:18.098
+<v Dantur, Alejandra (Externo - Sapiensys)>te importa. O sea,
+solo te importaría precio post a priori,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/54-2
+00:10:18.098 --> 00:10:21.848
+<v Dantur, Alejandra (Externo - Sapiensys)>digamos, no,
+porque después uno podría rescatar más</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/54-3
+00:10:21.848 --> 00:10:25.599
+<v Dantur, Alejandra (Externo - Sapiensys)>columnas, ya que lo está leyendo,
+como por ejemplo,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/54-4
+00:10:25.599 --> 00:10:30.071
+<v Dantur, Alejandra (Externo - Sapiensys)>si está restringido venta,
+como por ejemplo. Bueno, ahora sí,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/54-5
+00:10:30.071 --> 00:10:31.225
+<v Dantur, Alejandra (Externo - Sapiensys)>si ellos además.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/56-0
+00:10:31.385 --> 00:10:36.297
+<v Dantur, Alejandra (Externo - Sapiensys)>Lo de Jana también lo actualizan,
+no lo sé, pero fíjate, mira,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/56-1
+00:10:36.297 --> 00:10:40.195
+<v Dantur, Alejandra (Externo - Sapiensys)>vamos a hacer una cosa,
+me voy a ir de acá atrás,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/56-2
+00:10:40.195 --> 00:10:43.703
+<v Dantur, Alejandra (Externo - Sapiensys)>me voy a ir a demanda, sí,
+me voy a demanda,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/56-3
+00:10:43.703 --> 00:10:50.018
+<v Dantur, Alejandra (Externo - Sapiensys)>entonces le digo unidad de negocio MDH te
+pide hasta la antivariolica, no local,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/56-4
+00:10:50.018 --> 00:10:51.265
+<v Dantur, Alejandra (Externo - Sapiensys)>a ver 170 estos.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/57-0
+00:10:51.345 --> 00:10:59.171
+<v Dantur, Alejandra (Externo - Sapiensys)>tal porquería tipo de búsqueda por sku y
+acá le pongo el sku s Ah no no sé qué</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/57-1
+00:10:59.171 --> 00:11:07.096
+<v Dantur, Alejandra (Externo - Sapiensys)>hice acá Bueno no importa verá este era
+el sku listo a ver este sí es en tiempo</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/57-2
+00:11:07.096 --> 00:11:08.185
+<v Dantur, Alejandra (Externo - Sapiensys)>real Buscar</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/59-0
+00:11:13.945 --> 00:11:21.114
+<v Dantur, Alejandra (Externo - Sapiensys)>Acá supuestamente está yendo a la base de
+datos a mostrar en tiempo real el dato y</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/59-1
+00:11:21.114 --> 00:11:27.073
+<v Dantur, Alejandra (Externo - Sapiensys)>acá yo podría ver si ese push
+efectivamente le llegó al post o no le</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/59-2
+00:11:27.073 --> 00:11:31.305
+<v Dantur, Alejandra (Externo - Sapiensys)>llegó. Mirá lo que tarda, ¿no?
+Por eso es que...</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/58-0
+00:11:30.145 --> 00:11:30.625
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/60-0
+00:11:32.305 --> 00:11:37.945
+<v Dantur, Alejandra (Externo - Sapiensys)>Pero aquí sí tendrías que poder ver el
+push. Mira, terminará algún día, no sé.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/63-0
+00:11:40.705 --> 00:11:48.132
+<v Narvaiz, Facundo (Externos - Sapiensys)>quiero decir ahora la imagen la imagen de
+de la tabla esta de dashboard tiene</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/62-0
+00:11:46.585 --> 00:11:47.105
+<v Dantur, Alejandra (Externo - Sapiensys)>Sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/63-1
+00:11:48.132 --> 00:11:54.987
+<v Narvaiz, Facundo (Externos - Sapiensys)>cuatro o cinco columnas y habíamos
+hablado de medible no medible y esas</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/65-0
+00:11:54.865 --> 00:12:00.994
+<v Dantur, Alejandra (Externo - Sapiensys)>Bueno, yo te diría sí es probable.
+Creo que con Flor no la estás viendo la</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/63-2
+00:11:54.987 --> 00:11:56.225
+<v Narvaiz, Facundo (Externos - Sapiensys)>cosas lo hago</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/65-1
+00:12:00.994 --> 00:12:05.897
+<v Dantur, Alejandra (Externo - Sapiensys)>de test o la de bueno, no importa,
+pues son iguales. A ver,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/65-2
+00:12:05.897 --> 00:12:10.064
+<v Dantur, Alejandra (Externo - Sapiensys)>veamos que tenemos ahora acá,
+yo ya ni me acuerdo.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/64-0
+00:12:06.225 --> 00:12:06.625
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/65-3
+00:12:10.064 --> 00:12:16.928
+<v Dantur, Alejandra (Externo - Sapiensys)>Esa está hecha a imagen y semejanza de la
+que está consumiendo hoy la aplicación de</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/65-4
+00:12:16.928 --> 00:12:17.745
+<v Dantur, Alejandra (Externo - Sapiensys)>Argentina.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/66-0
+00:12:18.225 --> 00:12:22.073
+<v Dantur, Alejandra (Externo - Sapiensys)>Pero sí,
+a mí me gustaría enriquecerla con un par</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/66-1
+00:12:22.073 --> 00:12:26.228
+<v Dantur, Alejandra (Externo - Sapiensys)>de columnas,
+pero yo te diría que comparemos precios.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/66-2
+00:12:26.228 --> 00:12:29.383
+<v Dantur, Alejandra (Externo - Sapiensys)>O sea,
+vos con esto comparás el precio y</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/66-3
+00:12:29.383 --> 00:12:34.615
+<v Dantur, Alejandra (Externo - Sapiensys)>comparás la existencia o no existencia
+del material. Espérate esto,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/66-4
+00:12:34.615 --> 00:12:38.385
+<v Dantur, Alejandra (Externo - Sapiensys)>este porque abro relex,
+déjame ver el dashboard.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/67-0
+00:12:39.145 --> 00:12:40.265
+<v Dantur, Alejandra (Externo - Sapiensys)>Ehm.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/68-0
+00:12:41.105 --> 00:12:41.465
+<v Narvaiz, Facundo (Externos - Sapiensys)>Just.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/69-0
+00:12:41.505 --> 00:12:47.025
+<v Dantur, Alejandra (Externo - Sapiensys)>Porque nunca encuentro nada,
+estás guardado a ver pos.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/71-0
+00:12:47.945 --> 00:12:54.345
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Es artículos imagen post new,
+cuál de estas es esta no?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/70-0
+00:12:54.225 --> 00:12:55.025
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sure, esa.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/72-0
+00:12:55.985 --> 00:12:56.705
+<v Narvaiz, Facundo (Externos - Sapiensys)>Eso es.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/73-0
+00:12:57.225 --> 00:13:00.345
+<v Dantur, Alejandra (Externo - Sapiensys)>Que lee base imagen post, muy bien.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/74-0
+00:13:05.785 --> 00:13:06.505
+<v Dantur, Alejandra (Externo - Sapiensys)>BN.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/78-0
+00:13:09.825 --> 00:13:15.255
+<v Dantur, Alejandra (Externo - Sapiensys)>Sí, esta está bastante completita,
+pero tiene la nosotros podemos sumar acá</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/78-1
+00:13:15.255 --> 00:13:19.184
+<v Dantur, Alejandra (Externo - Sapiensys)>tranquilamente, o sea,
+base imagen post tiene de todo.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/78-2
+00:13:19.184 --> 00:13:24.684
+<v Dantur, Alejandra (Externo - Sapiensys)>Acá levantamos esto porque es lo que hoy
+está consumiendo Argentina y así se</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/78-3
+00:13:24.684 --> 00:13:30.185
+<v Dantur, Alejandra (Externo - Sapiensys)>generó esto, pero esto que es Colombia,
+o sea, pero en verdad podemos poner.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/76-0
+00:13:26.745 --> 00:13:27.345
+<v Narvaiz, Facundo (Externos - Sapiensys)>Got you.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/77-0
+00:13:28.225 --> 00:13:30.705
+<v Narvaiz, Facundo (Externos - Sapiensys)>Bueno, sí se puede ir agregando.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/79-0
+00:13:30.745 --> 00:13:35.905
+<v Dantur, Alejandra (Externo - Sapiensys)>Sí, a ver,
+yo ya aprendí que ellos tienen un</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/79-1
+00:13:35.905 --> 00:13:43.359
+<v Dantur, Alejandra (Externo - Sapiensys)>attention span que mejor quedarse con lo
+importante, ¿no? O sea,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/79-2
+00:13:43.359 --> 00:13:49.665
+<v Dantur, Alejandra (Externo - Sapiensys)>si le metemos todos los campos, no va,
+no va a servir.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/81-0
+00:13:50.185 --> 00:13:56.155
+<v Dantur, Alejandra (Externo - Sapiensys)>Yo te diría que habría que ver, sí,
+esto es lo que vos hoy estás leyendo.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/81-1
+00:13:56.155 --> 00:14:00.189
+<v Dantur, Alejandra (Externo - Sapiensys)>Exacto,
+es lo mismo que estamos viendo allá en lo</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/81-2
+00:14:00.189 --> 00:14:06.804
+<v Dantur, Alejandra (Externo - Sapiensys)>que yo te estoy mostrando, que déjame ver.
+Bueno, como verás, no, esto no anduvo,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/81-3
+00:14:06.804 --> 00:14:09.305
+<v Dantur, Alejandra (Externo - Sapiensys)>no directamente para mí que no.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/82-0
+00:14:09.625 --> 00:14:11.825
+<v Dantur, Alejandra (Externo - Sapiensys)>Dice, no existen datos para mostrar.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/83-0
+00:14:09.985 --> 00:14:11.985
+<v Onostre, Florencia( Externo - Sapiensys)>Acá volví, se me había caído el internet.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/84-0
+00:14:14.185 --> 00:14:18.505
+<v Dantur, Alejandra (Externo - Sapiensys)>Pero a ver,
+acá si volvemos a donde estábamos.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/85-0
+00:14:19.785 --> 00:14:22.705
+<v Dantur, Alejandra (Externo - Sapiensys)>Que es diferencia de precio en locales.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/86-0
+00:14:24.745 --> 00:14:27.225
+<v Dantur, Alejandra (Externo - Sapiensys)>acá Santiago del Estero vamos a ver</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/87-0
+00:14:30.665 --> 00:14:34.345
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Cuál es el que el o sea,
+ya ni me acuerdo cuál mandé?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/88-0
+00:14:42.265 --> 00:14:46.345
+<v Dantur, Alejandra (Externo - Sapiensys)>Déjame ver cuál fue el que pusier,
+no me acuerdo.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/89-0
+00:14:47.345 --> 00:14:54.185
+<v Dantur, Alejandra (Externo - Sapiensys)>1156963,
+ese es el material que yo pusieré.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/90-0
+00:14:55.345 --> 00:14:56.985
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Y por qué no lo veo?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/91-0
+00:14:58.585 --> 00:14:59.785
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Sería esta tienda?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/92-0
+00:15:01.225 --> 00:15:06.985
+<v Dantur, Alejandra (Externo - Sapiensys)>Sí, acá 115, la tercera página.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/93-0
+00:15:08.625 --> 00:15:15.145
+<v Dantur, Alejandra (Externo - Sapiensys)>1156963, que me fui hasta el final yo.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/94-0
+00:15:17.545 --> 00:15:21.705
+<v Dantur, Alejandra (Externo - Sapiensys)>Acá ventilador manual para asado,
+este es el que.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/97-0
+00:15:24.505 --> 00:15:30.404
+<v Dantur, Alejandra (Externo - Sapiensys)>Sí, fíjate que acá no aparece para nada.
+¿Este fue, no? Sí, ahí está,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/95-0
+00:15:24.865 --> 00:15:25.585
+<v Narvaiz, Facundo (Externos - Sapiensys)>As in view.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/97-1
+00:15:30.404 --> 00:15:33.185
+<v Dantur, Alejandra (Externo - Sapiensys)>no aparece para nada el push acá.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/96-0
+00:15:30.465 --> 00:15:31.025
+<v Narvaiz, Facundo (Externos - Sapiensys)>sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/98-0
+00:15:34.185 --> 00:15:38.082
+<v Dantur, Alejandra (Externo - Sapiensys)>O sea,
+sigue teniendo el 10 del 6 un cambio de</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/98-1
+00:15:38.082 --> 00:15:38.745
+<v Dantur, Alejandra (Externo - Sapiensys)>precios.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/99-0
+00:15:38.305 --> 00:15:42.275
+<v Narvaiz, Facundo (Externos - Sapiensys)>No, porque no se actualizó,
+no se va a actualizar ahora recién a las</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/99-1
+00:15:42.275 --> 00:15:43.425
+<v Narvaiz, Facundo (Externos - Sapiensys)>3:00 de la mañana o.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/101-0
+00:15:42.825 --> 00:15:48.837
+<v Dantur, Alejandra (Externo - Sapiensys)>No, porque esto no ocurre en tiempo real.
+Lo que era en tiempo real es el otro que</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/100-0
+00:15:46.225 --> 00:15:46.865
+<v Narvaiz, Facundo (Externos - Sapiensys)>Stay soon.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/101-1
+00:15:48.837 --> 00:15:53.618
+<v Dantur, Alejandra (Externo - Sapiensys)>te mostré que no anda,
+pero yo lo he usado en el pasado y andaba.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/101-2
+00:15:53.618 --> 00:15:58.398
+<v Dantur, Alejandra (Externo - Sapiensys)>Mira, acá lo que supuestamente tiene,
+mira, es esto que está acá,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/101-3
+00:15:58.398 --> 00:16:01.585
+<v Dantur, Alejandra (Externo - Sapiensys)>que dice actualizar diferencias de
+precios.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/103-0
+00:16:02.345 --> 00:16:09.045
+<v Dantur, Alejandra (Externo - Sapiensys)>A ver, si vos entrás mañana ahí,
+ya el ese material debería haber</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/103-1
+00:16:09.045 --> 00:16:16.963
+<v Dantur, Alejandra (Externo - Sapiensys)>desaparecido porque la diferencia se
+subsanó. Okey, eso ocurre, eso pasa. Yo,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/102-0
+00:16:13.745 --> 00:16:14.225
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/103-2
+00:16:16.963 --> 00:16:22.241
+<v Dantur, Alejandra (Externo - Sapiensys)>por ejemplo,
+hago muchas veces de acá levanto todas</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/103-3
+00:16:22.241 --> 00:16:23.865
+<v Dantur, Alejandra (Externo - Sapiensys)>las diferencias.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/105-0
+00:16:24.185 --> 00:16:28.889
+<v Dantur, Alejandra (Externo - Sapiensys)>Mira, fíjate,
+ahora pasamos de cuánto teníamos 1211.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/105-1
+00:16:28.889 --> 00:16:34.480
+<v Dantur, Alejandra (Externo - Sapiensys)>Ahora estamos en 1208. ¿Ves?
+Le apreté el botón de actualizar,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/104-0
+00:16:32.585 --> 00:16:32.945
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/105-2
+00:16:34.480 --> 00:16:35.545
+<v Dantur, Alejandra (Externo - Sapiensys)>vamos a ver.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/107-0
+00:16:44.745 --> 00:16:48.385
+<v Dantur, Alejandra (Externo - Sapiensys)>11569, no sé cuánto.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/108-0
+00:16:50.025 --> 00:16:52.825
+<v Dantur, Alejandra (Externo - Sapiensys)>Sí, huele un ventilador.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/110-0
+00:16:51.745 --> 00:16:58.661
+<v Narvaiz, Facundo (Externos - Sapiensys)>Entonces ya sé más o menos lo que voy a
+hacer hago un igual que venimos haciendo</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/110-1
+00:16:58.661 --> 00:17:04.979
+<v Narvaiz, Facundo (Externos - Sapiensys)>un Chrome para que me me complete una
+tabla en Jana y después mi programa</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/110-2
+00:17:04.979 --> 00:17:11.297
+<v Narvaiz, Facundo (Externos - Sapiensys)>solamente va a buscar una vista
+comparativa ahí en una vista Más que nada</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/109-0
+00:17:11.145 --> 00:17:12.865
+<v Dantur, Alejandra (Externo - Sapiensys)>Claro, sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/110-3
+00:17:11.297 --> 00:17:12.065
+<v Narvaiz, Facundo (Externos - Sapiensys)>porque si</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/111-0
+00:17:12.305 --> 00:17:12.545
+<v Narvaiz, Facundo (Externos - Sapiensys)>No.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/112-0
+00:17:14.705 --> 00:17:15.745
+<v Narvaiz, Facundo (Externos - Sapiensys)>Resumen.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/113-0
+00:17:14.985 --> 00:17:19.101
+<v Dantur, Alejandra (Externo - Sapiensys)>Fíjate que se se se fue,
+pareciera no el material con diferencia,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/113-1
+00:17:19.101 --> 00:17:20.785
+<v Dantur, Alejandra (Externo - Sapiensys)>o sea, cuando lo pusheamos.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/114-0
+00:17:22.345 --> 00:17:32.705
+<v Dantur, Alejandra (Externo - Sapiensys)>115, no, ya me pasé.
+11569631156963 se fue, se fue.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/115-0
+00:17:33.785 --> 00:17:34.185
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Viste?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/116-0
+00:17:35.105 --> 00:17:35.465
+<v Narvaiz, Facundo (Externos - Sapiensys)>That.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/117-0
+00:17:35.545 --> 00:17:39.446
+<v Dantur, Alejandra (Externo - Sapiensys)>O K, o sea,
+esta es la prueba que anduvo el push y ya</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/117-1
+00:17:39.446 --> 00:17:43.996
+<v Dantur, Alejandra (Externo - Sapiensys)>y ya no vas a ver acá la palabra push.
+¿Y por qué se fueron 3?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/117-2
+00:17:43.996 --> 00:17:48.185
+<v Dantur, Alejandra (Externo - Sapiensys)>Porque se va uno por EAN.
+Debe estar repetido el EAN o K.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/118-0
+00:17:49.385 --> 00:17:53.145
+<v Dantur, Alejandra (Externo - Sapiensys)>Así que, evidentemente,
+sí anda este botón.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/119-0
+00:17:54.585 --> 00:17:58.865
+<v Dantur, Alejandra (Externo - Sapiensys)>Yo te diría, a ver,
+estoy pensando en voz alta,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/119-1
+00:17:58.865 --> 00:18:04.659
+<v Dantur, Alejandra (Externo - Sapiensys)>ahora que hablo con vos,
+no necesitaríamos la consulta en tiempo</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/119-2
+00:18:04.659 --> 00:18:05.105
+<v Dantur, Alejandra (Externo - Sapiensys)>real.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/120-0
+00:18:06.345 --> 00:18:10.969
+<v Dantur, Alejandra (Externo - Sapiensys)>Teniendo la posibilidad de actualizar las
+diferencias de precios. O sea,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/120-1
+00:18:10.969 --> 00:18:15.782
+<v Dantur, Alejandra (Externo - Sapiensys)>supongo que cuando vos cliqueas acá,
+lo que es el tipo es volver a leer esa</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/120-2
+00:18:15.782 --> 00:18:16.985
+<v Dantur, Alejandra (Externo - Sapiensys)>tabla, ¿me explico?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/121-0
+00:18:18.665 --> 00:18:22.722
+<v Dantur, Alejandra (Externo - Sapiensys)>O sea,
+hace una vez al día los 53 tiendas y</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/121-1
+00:18:22.722 --> 00:18:30.190
+<v Dantur, Alejandra (Externo - Sapiensys)>después, si querés alguna en particular,
+porque ese día la estás trabajando a la</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/121-2
+00:18:30.190 --> 00:18:35.538
+<v Dantur, Alejandra (Externo - Sapiensys)>tienda, este botón.
+Yo no creo que necesitemos de momento</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/121-3
+00:18:35.538 --> 00:18:37.105
+<v Dantur, Alejandra (Externo - Sapiensys)>este otro que es.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/123-0
+00:18:37.385 --> 00:18:41.458
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Que te mostré antes,
+que es el a demanda que supuestamente</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/123-1
+00:18:41.458 --> 00:18:44.105
+<v Dantur, Alejandra (Externo - Sapiensys)>anda en tiempo real, me seguiste, facu?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/122-0
+00:18:44.185 --> 00:18:44.745
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/125-0
+00:18:45.545 --> 00:18:50.486
+<v Dantur, Alejandra (Externo - Sapiensys)>Esta para mí es la parte importante,
+porque esta es la que nos da la medida</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/124-0
+00:18:46.305 --> 00:18:46.865
+<v Narvaiz, Facundo (Externos - Sapiensys)>sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/125-1
+00:18:50.486 --> 00:18:53.932
+<v Dantur, Alejandra (Externo - Sapiensys)>del consumidor.
+Sobre todo porque además ellos dicen</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/125-2
+00:18:53.932 --> 00:18:58.028
+<v Dantur, Alejandra (Externo - Sapiensys)>tener una manera de leer ellos el post,
+no de ver diferencias,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/125-3
+00:18:58.028 --> 00:19:01.669
+<v Dantur, Alejandra (Externo - Sapiensys)>pero sí tienen una aplicación que les
+deja ver el post.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/125-4
+00:19:01.669 --> 00:19:05.245
+<v Dantur, Alejandra (Externo - Sapiensys)>Entonces por ahí lo que nosotros tenemos
+que hacer es,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/125-5
+00:19:05.245 --> 00:19:07.585
+<v Dantur, Alejandra (Externo - Sapiensys)>para complementar lo que hace Floor,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/127-0
+00:19:08.665 --> 00:19:15.972
+<v Dantur, Alejandra (Externo - Sapiensys)>Lo que tenemos que tener es este monitor
+que resuelva esta parte que, de hecho,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/127-1
+00:19:15.972 --> 00:19:22.366
+<v Dantur, Alejandra (Externo - Sapiensys)>ni siquiera con esta paginación siniestra.
+Por favor, son 14 tiendas.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/127-2
+00:19:22.366 --> 00:19:26.385
+<v Dantur, Alejandra (Externo - Sapiensys)>Poneme todas las 14 tiendas en la
+pantalla.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/126-0
+00:19:25.465 --> 00:19:25.985
+<v Narvaiz, Facundo (Externos - Sapiensys)>So.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/128-0
+00:19:27.665 --> 00:19:32.945
+<v Dantur, Alejandra (Externo - Sapiensys)>Que muestre las diferencias de precio
+registradas esa mañana.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/129-0
+00:19:33.785 --> 00:19:39.921
+<v Dantur, Alejandra (Externo - Sapiensys)>Y con su trazabilidad y chau.
+Y después podemos podemos integrarles a</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/129-1
+00:19:39.921 --> 00:19:47.196
+<v Dantur, Alejandra (Externo - Sapiensys)>ellos esa herramienta que tienen para ver
+el post y podemos poner la log del día y</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/129-2
+00:19:47.196 --> 00:19:53.507
+<v Dantur, Alejandra (Externo - Sapiensys)>sumarle todo eso al Power BI.
+Yo creo que con eso estamos más que bien.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/129-3
+00:19:53.507 --> 00:19:53.945
+<v Dantur, Alejandra (Externo - Sapiensys)>este.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/131-0
+00:19:54.145 --> 00:19:59.661
+<v Dantur, Alejandra (Externo - Sapiensys)>Bueno, fijate, andá a ver,
+yo te mandé esto. Estoy casi segura.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/131-1
+00:19:59.661 --> 00:20:03.625
+<v Dantur, Alejandra (Externo - Sapiensys)>Déjame ver en el chat. Bueno,
+te lo mando ya.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/130-0
+00:20:00.305 --> 00:20:01.345
+<v Narvaiz, Facundo (Externos - Sapiensys)>No.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/133-0
+00:20:05.305 --> 00:20:07.345
+<v Dantur, Alejandra (Externo - Sapiensys)>El tema es que me parece que.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/132-0
+00:20:05.825 --> 00:20:06.665
+<v Narvaiz, Facundo (Externos - Sapiensys)>¿Qué me pasa?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/134-0
+00:20:08.345 --> 00:20:10.065
+<v Dantur, Alejandra (Externo - Sapiensys)>No vas a poder entrar.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/135-0
+00:20:14.305 --> 00:20:15.105
+<v Narvaiz, Facundo (Externos - Sapiensys)>Ahí lo encontré.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/136-0
+00:20:15.945 --> 00:20:16.785
+<v Narvaiz, Facundo (Externos - Sapiensys)>Data.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/137-0
+00:20:15.945 --> 00:20:18.145
+<v Dantur, Alejandra (Externo - Sapiensys)>Tenemos que pedir que te den acceso.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/139-0
+00:20:19.185 --> 00:20:24.585
+<v Dantur, Alejandra (Externo - Sapiensys)>Este por ahí con el user de Patri, bueno,
+yo eso me voy a ocupar.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/140-0
+00:20:23.025 --> 00:20:25.779
+<v Narvaiz, Facundo (Externos - Sapiensys)>Ya te digo, si tengo, para,
+para que yo te digo,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/140-1
+00:20:25.779 --> 00:20:27.745
+<v Narvaiz, Facundo (Externos - Sapiensys)>pues si vos podés porque yo no voy.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/141-0
+00:20:28.345 --> 00:20:30.305
+<v Dantur, Alejandra (Externo - Sapiensys)>Porque me dieron de alta a mí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/142-0
+00:20:31.625 --> 00:20:33.385
+<v Dantur, Alejandra (Externo - Sapiensys)>Yo creo que pedí que te den de alta.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/143-0
+00:20:32.225 --> 00:20:34.465
+<v Narvaiz, Facundo (Externos - Sapiensys)>¿Estás pasando tu clave contraseña o no?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/144-0
+00:20:35.545 --> 00:20:42.373
+<v Dantur, Alejandra (Externo - Sapiensys)>Yo te la paso, sí,
+tenés que tener cuidado, te lo paso. Mira,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/144-1
+00:20:42.373 --> 00:20:44.025
+<v Dantur, Alejandra (Externo - Sapiensys)>la mía es EEEF.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/145-0
+00:20:42.865 --> 00:20:45.505
+<v Narvaiz, Facundo (Externos - Sapiensys)>Ay, el usuario no existe, está bien.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/146-0
+00:20:45.625 --> 00:20:52.985
+<v Dantur, Alejandra (Externo - Sapiensys)>Es 4883 y es Hannah. Espera,
+¿cuál es no es decirle?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/147-0
+00:20:51.265 --> 00:20:54.840
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sí,
+pero se linkea con el se linkea con el</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/148-0
+00:20:54.025 --> 00:20:58.265
+<v Dantur, Alejandra (Externo - Sapiensys)>Junio, junio es el usuario de Windows,
+no el de Hannah.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/147-1
+00:20:54.840 --> 00:20:55.505
+<v Narvaiz, Facundo (Externos - Sapiensys)>usuario.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/150-0
+00:20:59.025 --> 00:21:01.505
+<v Narvaiz, Facundo (Externos - Sapiensys)>Por eso, ahí está.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/149-0
+00:21:00.185 --> 00:21:01.025
+<v Dantur, Alejandra (Externo - Sapiensys)>I tennis.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/151-0
+00:21:03.225 --> 00:21:08.325
+<v Dantur, Alejandra (Externo - Sapiensys)>Ese es el mío, bueno,
+pero igual esto no es mucha maravilla.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/151-1
+00:21:08.325 --> 00:21:13.425
+<v Dantur, Alejandra (Externo - Sapiensys)>A ver, volviendo después, si querés,
+vemos bien la las este.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/152-0
+00:21:14.425 --> 00:21:20.526
+<v Dantur, Alejandra (Externo - Sapiensys)>Como se dice las columnas a poner, o sea,
+vos vas a tener precio SAP, precio post,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/152-1
+00:21:20.526 --> 00:21:25.303
+<v Dantur, Alejandra (Externo - Sapiensys)>esta pantalla la mandé,
+la mandé por ahí y precio a SLS no vas a</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/152-2
+00:21:25.303 --> 00:21:28.831
+<v Dantur, Alejandra (Externo - Sapiensys)>tener.
+Yo creo que acá lo que es importante que</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/152-3
+00:21:28.831 --> 00:21:32.212
+<v Dantur, Alejandra (Externo - Sapiensys)>figure,
+además de estos datos que están acá y</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/152-4
+00:21:32.212 --> 00:21:35.225
+<v Dantur, Alejandra (Externo - Sapiensys)>mirando ya la vista que vos estás usando.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/153-0
+00:21:36.185 --> 00:21:44.985
+<v Dantur, Alejandra (Externo - Sapiensys)>Me parece importante tener el Mac de plum
+plums.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/154-0
+00:21:47.545 --> 00:21:50.425
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Vos vos este lo sacas de acá?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/155-0
+00:21:53.545 --> 00:21:59.145
+<v Dantur, Alejandra (Externo - Sapiensys)>El código de surtido es lo que creo que
+hay que tener, que sería el.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/156-0
+00:22:00.825 --> 00:22:01.465
+<v Dantur, Alejandra (Externo - Sapiensys)>Back.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/157-0
+00:22:02.265 --> 00:22:09.785
+<v Dantur, Alejandra (Externo - Sapiensys)>El MBK lo estoy buscando, perdón, perdón,
+MBK.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/158-0
+00:22:12.345 --> 00:22:14.945
+<v Dantur, Alejandra (Externo - Sapiensys)>MVGR cuatro, pero dónde está.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/159-0
+00:22:16.025 --> 00:22:18.225
+<v Dantur, Alejandra (Externo - Sapiensys)>Esto es sí, ahora lo voy a agregar.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/161-0
+00:22:19.305 --> 00:22:24.505
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Cómo puede ser que no esté Flor?
+Puede ser que no esté, no puede ser eso.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/160-0
+00:22:25.025 --> 00:22:25.785
+<v Onostre, Florencia( Externo - Sapiensys)>Párale.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/162-0
+00:22:26.745 --> 00:22:30.525
+<v Dantur, Alejandra (Externo - Sapiensys)>El código de acá, acá está,
+acá está el código de surtido,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/162-1
+00:22:30.525 --> 00:22:35.649
+<v Dantur, Alejandra (Externo - Sapiensys)>este que para ellos es el más importante
+porque es el que decides este que está</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/162-2
+00:22:35.649 --> 00:22:35.905
+<v Dantur, Alejandra (Externo - Sapiensys)>acá.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/163-0
+00:22:36.665 --> 00:22:40.225
+<v Dantur, Alejandra (Externo - Sapiensys)>Que ya le voy a poner otro nombre.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/164-0
+00:22:45.865 --> 00:22:49.513
+<v Dantur, Alejandra (Externo - Sapiensys)>Esto que estoy haciendo te va a *****
+alguna vista de power bi o no tenemos</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/165-0
+00:22:49.425 --> 00:22:50.625
+<v Onostre, Florencia( Externo - Sapiensys)>No, nada.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/164-1
+00:22:49.513 --> 00:22:50.185
+<v Dantur, Alejandra (Externo - Sapiensys)>hecha todavía.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/166-0
+00:22:53.425 --> 00:22:57.625
+<v Narvaiz, Facundo (Externos - Sapiensys)>Estoy contándome si por un XJ.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/168-0
+00:22:59.505 --> 00:23:04.505
+<v Narvaiz, Facundo (Externos - Sapiensys)>Un XSJS se puede conectar a postgres de
+una base de datos.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/170-0
+00:23:04.905 --> 00:23:07.825
+<v Dantur, Alejandra (Externo - Sapiensys)>Sí, seguro, claro que sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/169-0
+00:23:06.945 --> 00:23:07.505
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/171-0
+00:23:08.465 --> 00:23:11.185
+<v Narvaiz, Facundo (Externos - Sapiensys)>Bueno, no, o sea, indagar en eso.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/173-0
+00:23:11.705 --> 00:23:16.401
+<v Dantur, Alejandra (Externo - Sapiensys)>Bueno, yo qué le digo,
+le yo le digo 2 semanas a Julián,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/173-1
+00:23:16.401 --> 00:23:17.225
+<v Dantur, Alejandra (Externo - Sapiensys)>está bien.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/172-0
+00:23:17.025 --> 00:23:18.385
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sí, sí, sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/174-0
+00:23:18.425 --> 00:23:25.539
+<v Dantur, Alejandra (Externo - Sapiensys)>Aunque sea para mostrar algo, bueno,
+y acá, además del surtido,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/174-1
+00:23:25.539 --> 00:23:28.985
+<v Dantur, Alejandra (Externo - Sapiensys)>el restringido venta que sería.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/175-0
+00:23:32.665 --> 00:23:35.625
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Te acordás Flor cuál de estos 2 es el
+restringido venta?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/176-0
+00:23:42.465 --> 00:23:43.985
+<v Dantur, Alejandra (Externo - Sapiensys)>Ya tengo a Flor, la perdí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/177-0
+00:23:46.745 --> 00:23:48.185
+<v Dantur, Alejandra (Externo - Sapiensys)>Bueno, acá me voy a dar cuenta.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/178-0
+00:23:48.305 --> 00:23:51.985
+<v Onostre, Florencia( Externo - Sapiensys)>¿Acá estoy, acá estoy,
+se me va y viene en Internet, cómo vale?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/181-0
+00:23:53.145 --> 00:23:58.868
+<v Dantur, Alejandra (Externo - Sapiensys)>No, el restringido venta era data 02.
+¿Te acordás de eso?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/179-0
+00:23:56.225 --> 00:23:56.825
+<v Onostre, Florencia( Externo - Sapiensys)>Sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/181-1
+00:23:58.868 --> 00:24:05.775
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Y te acordás qué posición no? A ver,
+buscamos acá. Entonces, espera,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/180-0
+00:24:04.625 --> 00:24:05.465
+<v Onostre, Florencia( Externo - Sapiensys)>Billon.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/181-2
+00:24:05.775 --> 00:24:09.425
+<v Dantur, Alejandra (Externo - Sapiensys)>calculated column, vamos a poner acá.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/182-0
+00:24:11.385 --> 00:24:12.865
+<v Dantur, Alejandra (Externo - Sapiensys)>Restringido.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/184-0
+00:24:15.705 --> 00:24:24.285
+<v Dantur, Alejandra (Externo - Sapiensys)>Que es un varchar, es un varchar de uno.
+No me acuerdo nada, no me acuerdo, o sea,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/183-0
+00:24:24.225 --> 00:24:24.305
+<v Narvaiz, Facundo (Externos - Sapiensys)>A.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/184-1
+00:24:24.285 --> 00:24:26.145
+<v Dantur, Alejandra (Externo - Sapiensys)>sé que es el left.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/185-0
+00:24:26.985 --> 00:24:27.905
+<v Dantur, Alejandra (Externo - Sapiensys)>De.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/186-0
+00:24:30.985 --> 00:24:32.665
+<v Dantur, Alejandra (Externo - Sapiensys)>En.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/188-0
+00:24:43.785 --> 00:24:46.145
+<v Dantur, Alejandra (Externo - Sapiensys)>Así ya se lo dejamos a Paco.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/187-0
+00:24:43.985 --> 00:24:45.545
+<v Onostre, Florencia( Externo - Sapiensys)>A ver, lo buscamos.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/189-0
+00:24:47.385 --> 00:24:50.825
+<v Dantur, Alejandra (Externo - Sapiensys)>Sí, deja, voy probando, es un left string.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/190-0
+00:24:52.225 --> 00:24:56.036
+<v Dantur, Alejandra (Externo - Sapiensys)>Listo,
+esto tengo que levantar ese campo sin uno</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/190-1
+00:24:56.036 --> 00:24:59.225
+<v Dantur, Alejandra (Externo - Sapiensys)>va a andar. Me faltó la longitud, es uno.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/191-0
+00:25:00.825 --> 00:25:05.185
+<v Dantur, Alejandra (Externo - Sapiensys)>Muy bien, ADE Data cero 2.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/192-0
+00:25:06.265 --> 00:25:07.065
+<v Dantur, Alejandra (Externo - Sapiensys)>Perfect.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/193-0
+00:25:09.545 --> 00:25:14.185
+<v Dantur, Alejandra (Externo - Sapiensys)>Ahí está, muy bien, listo,
+entonces esto sube.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/194-0
+00:25:16.025 --> 00:25:17.865
+<v Dantur, Alejandra (Externo - Sapiensys)>Y sube.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/195-0
+00:25:19.265 --> 00:25:24.265
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Y acá, para qué quiero la dentada?
+No lo quiero muy bien, listo, a ver.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/198-0
+00:25:37.265 --> 00:25:40.265
+<v Onostre, Florencia( Externo - Sapiensys)>Sí, hale el 2, el primero del 2.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/199-0
+00:25:43.625 --> 00:25:45.945
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Cómo puede ser que no haya nada?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/200-0
+00:25:47.785 --> 00:25:50.905
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Será por la tienda que elegí?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/201-0
+00:25:53.185 --> 00:25:57.305
+<v Dantur, Alejandra (Externo - Sapiensys)>Hay que buscar una tienda que esté acá
+cero 18.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/202-0
+00:26:00.505 --> 00:26:01.345
+<v Dantur, Alejandra (Externo - Sapiensys)>Ahí está.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/203-0
+00:26:02.505 --> 00:26:07.305
+<v Dantur, Alejandra (Externo - Sapiensys)>¿El uno es que se puede vender y el cero
+que no se puede vender, es así, no?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/204-0
+00:26:08.385 --> 00:26:08.865
+<v Onostre, Florencia( Externo - Sapiensys)>Sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/205-0
+00:26:10.265 --> 00:26:12.225
+<v Dantur, Alejandra (Externo - Sapiensys)>No me parece que es al revés.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/206-0
+00:26:13.305 --> 00:26:18.625
+<v Dantur, Alejandra (Externo - Sapiensys)>Porque fíjate que acá veo FSY este V o PE
+seguro será así.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/210-0
+00:26:21.065 --> 00:26:26.558
+<v Dantur, Alejandra (Externo - Sapiensys)>No me acuerdo, bueno, no importa.
+Igual Facu lo que va a hacer por ahora es</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/207-0
+00:26:26.225 --> 00:26:26.625
+<v Onostre, Florencia( Externo - Sapiensys)>Good.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/210-1
+00:26:26.558 --> 00:26:30.244
+<v Dantur, Alejandra (Externo - Sapiensys)>reproducir. Sí,
+igual ese dato hay que ver cómo lo</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/208-0
+00:26:27.665 --> 00:26:28.185
+<v Narvaiz, Facundo (Externos - Sapiensys)>Dale.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/209-0
+00:26:29.225 --> 00:26:31.745
+<v Narvaiz, Facundo (Externos - Sapiensys)>Me explico entonces descripción y precio.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/210-2
+00:26:30.244 --> 00:26:31.545
+<v Dantur, Alejandra (Externo - Sapiensys)>levantas del post.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/211-0
+00:26:33.145 --> 00:26:33.945
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Cómo?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/212-0
+00:26:34.865 --> 00:26:38.825
+<v Narvaiz, Facundo (Externos - Sapiensys)>Descripción, precio, son las 2,
+los 2 campos de.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/213-0
+00:26:37.865 --> 00:26:42.556
+<v Dantur, Alejandra (Externo - Sapiensys)>Sí, lo que tenés acá,
+lo que tenés acá no es más que lo que</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/213-1
+00:26:42.556 --> 00:26:49.045
+<v Dantur, Alejandra (Externo - Sapiensys)>tenés acá. Para mí estos son los campos,
+lo que no sé es dónde los encontrás en el</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/213-2
+00:26:49.045 --> 00:26:55.065
+<v Dantur, Alejandra (Externo - Sapiensys)>postre, pero estos 2 campos están.
+Tengo dudas del famoso restringido venta.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/214-0
+00:26:57.065 --> 00:26:57.945
+<v Dantur, Alejandra (Externo - Sapiensys)>A ver.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/216-0
+00:27:01.705 --> 00:27:08.745
+<v Dantur, Alejandra (Externo - Sapiensys)>por ejemplo el BA que es el caso más a
+ver acá</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/215-0
+00:27:03.225 --> 00:27:03.505
+<v Narvaiz, Facundo (Externos - Sapiensys)>Oh.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/217-0
+00:27:07.585 --> 00:27:15.065
+<v Onostre, Florencia( Externo - Sapiensys)>Tengo, por ejemplo, en la cero 18 hay 11.
+000.1 y 8000.0.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/219-0
+00:27:16.905 --> 00:27:20.145
+<v Dantur, Alejandra (Externo - Sapiensys)>O sea,
+que cero es que se puede vender y uno es</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/218-0
+00:27:17.105 --> 00:27:17.425
+<v Onostre, Florencia( Externo - Sapiensys)>Yeah.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/219-1
+00:27:20.145 --> 00:27:23.723
+<v Dantur, Alejandra (Externo - Sapiensys)>que no se puede vender, está invertido.
+¿Te acordás?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/219-2
+00:27:23.723 --> 00:27:26.760
+<v Dantur, Alejandra (Externo - Sapiensys)>Yo te decía siempre que está invertido
+esto,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/219-3
+00:27:26.760 --> 00:27:30.945
+<v Dantur, Alejandra (Externo - Sapiensys)>igual que pasa con el por eso hay que
+darlo vuelta. Entonces,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/219-4
+00:27:30.945 --> 00:27:34.185
+<v Dantur, Alejandra (Externo - Sapiensys)>¿qué te dije que uno es que no se puede
+vender?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/222-0
+00:27:32.145 --> 00:27:35.251
+<v Onostre, Florencia( Externo - Sapiensys)>Claro,
+porque era como medio la lógica de que de</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/222-1
+00:27:35.251 --> 00:27:39.942
+<v Onostre, Florencia( Externo - Sapiensys)>que un uno de que era afirmativo,
+si es que estaba restringida la venta y</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/220-0
+00:27:38.825 --> 00:27:39.505
+<v Dantur, Alejandra (Externo - Sapiensys)>Claro.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/222-2
+00:27:39.942 --> 00:27:43.745
+<v Onostre, Florencia( Externo - Sapiensys)>por eso el nombre de del campo
+restringido a venta, uno sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/221-0
+00:27:42.745 --> 00:27:43.265
+<v Dantur, Alejandra (Externo - Sapiensys)>Sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/223-0
+00:27:44.905 --> 00:27:51.318
+<v Dantur, Alejandra (Externo - Sapiensys)>Ok, entonces el restringido es cero,
+que sí se puede vender, o sea,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/223-1
+00:27:51.318 --> 00:27:57.825
+<v Dantur, Alejandra (Externo - Sapiensys)>restringido uno significa true para
+restringido, no se puede vender.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/224-0
+00:27:59.145 --> 00:28:04.063
+<v Dantur, Alejandra (Externo - Sapiensys)>Yo porque me conozco más o menos los
+códigos de surtido y ya por eso me doy</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/224-1
+00:28:04.063 --> 00:28:09.240
+<v Dantur, Alejandra (Externo - Sapiensys)>cuenta. Y acá cuando dice no disponible,
+esto significa que es un alta o ky que</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/224-2
+00:28:09.240 --> 00:28:13.511
+<v Dantur, Alejandra (Externo - Sapiensys)>entonces no está en el post porque es un
+alta. Bueno, chicos, no,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/224-3
+00:28:13.511 --> 00:28:18.105
+<v Dantur, Alejandra (Externo - Sapiensys)>que quedan 5 minutos y tengo todavía que
+mandar un correo más o menos.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/225-0
+00:28:18.265 --> 00:28:21.065
+<v Dantur, Alejandra (Externo - Sapiensys)>¿No, Facu,
+con esto te parece para arrancar?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/227-0
+00:28:21.985 --> 00:28:25.280
+<v Narvaiz, Facundo (Externos - Sapiensys)>Sí,
+ahora ya me me quedó mucho más claro todo,</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/227-1
+00:28:25.280 --> 00:28:30.889
+<v Narvaiz, Facundo (Externos - Sapiensys)>una porque ya ya tiene más claro lo del
+post y otra porque ya ahora hago el xjs</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/227-2
+00:28:30.889 --> 00:28:35.025
+<v Narvaiz, Facundo (Externos - Sapiensys)>para meter todo en Hana y ya no tengo
+doble conexión en el</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/226-0
+00:28:35.865 --> 00:28:36.625
+<v Dantur, Alejandra (Externo - Sapiensys)>Claro.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/228-0
+00:28:36.145 --> 00:28:38.625
+<v Narvaiz, Facundo (Externos - Sapiensys)>En Payton y esas cosas ya me facilitan un
+montón.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/229-0
+00:28:38.985 --> 00:28:44.338
+<v Dantur, Alejandra (Externo - Sapiensys)>Bueno, muy bien. Bueno, chicos,
+nos vemos en la otra Flor.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/229-1
+00:28:44.338 --> 00:28:47.785
+<v Dantur, Alejandra (Externo - Sapiensys)>¿Vos pensá que le inventamos a Julián?</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/230-0
+00:28:49.065 --> 00:28:50.665
+<v Dantur, Alejandra (Externo - Sapiensys)>Con el Power Bi.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/231-0
+00:28:52.625 --> 00:28:54.585
+<v Onostre, Florencia( Externo - Sapiensys)>Bueno, sí.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/234-0
+00:28:55.065 --> 00:28:59.984
+<v Dantur, Alejandra (Externo - Sapiensys)>¿De cuándo le decimos no que tengo que
+mandar un correo antes que empiece el</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/234-1
+00:28:59.984 --> 00:29:03.305
+<v Dantur, Alejandra (Externo - Sapiensys)>otro? Bueno, muy bien, nos vemos luego,
+chao, chao.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/235-0
+00:29:02.025 --> 00:29:05.145
+<v Narvaiz, Facundo (Externos - Sapiensys)>Buenísimo. Muchas gracias, Andrea.
+Tao floor.</v>
+
+d23788fa-621e-49a5-9af7-4cb75b68bbc6/233-0
+00:29:03.505 --> 00:29:04.385
+<v Onostre, Florencia( Externo - Sapiensys)>Total.</v>

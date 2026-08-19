@@ -1,0 +1,15 @@
+# Credenciales — NO subir al repositorio
+.env
+stores.json
+
+# Entorno virtual
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# VS Code
+.vscode/
+
+# Streamlit cache
+.streamlit/

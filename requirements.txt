@@ -1,0 +1,9 @@
+# Monitor POST vs HANA — Dependencias
+streamlit>=1.35.0
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9
+hdbcli>=2.20.0
+sqlalchemy-hana>=4.0.0
+python-dotenv>=1.0.0
+pandas>=2.2.0
+plotly>=5.20.0
