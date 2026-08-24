@@ -1,6 +1,7 @@
 # Credenciales — NO subir al repositorio
 .env
 stores.json
+docs/tiendas.txt
 
 # Entorno virtual
 venv/
