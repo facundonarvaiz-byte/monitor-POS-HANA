@@ -110,10 +110,16 @@ def _semaforo(estado: str) -> str:
     }.get(estado, "⚪")
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def _resumen_cacheados() -> pd.DataFrame:
+    """Resumen compartido entre sesiones (TTL 5 min) para no recalcularlo por usuario."""
+    return get_resumen_tiendas()
+
+
 def _cargar_resumen():
     with st.spinner("Cargando resumen de tiendas..."):
         try:
-            st.session_state.df_resumen = get_resumen_tiendas()
+            st.session_state.df_resumen = _resumen_cacheados()
         except Exception as ex:
             st.error(f"Error cargando resumen: {ex}")
             logger.exception("Error en get_resumen_tiendas")

@@ -34,67 +34,114 @@ def es_subarticulo(df: pd.DataFrame) -> pd.Series:
     return sin_restriccion & existe_en_pos
 
 
+def _sql_resumen_tienda(tienda: str) -> str:
+    """
+    SELECT agregado de VISTA_COMPARACION para una tienda.
+
+    Devuelve una sola fila con los conteos de diferencias calculados en
+    HANA (evita traer el detalle completo de la tienda a memoria).
+    Replica el filtro de subarticulos EAN de es_subarticulo().
+    """
+    if not re.match(r'^[A-Za-z0-9]+$', tienda):
+        raise ValueError(f"Código de tienda inválido: {tienda!r}")
+
+    inner = (
+        f"SELECT * FROM {VISTA_COMPARACION}('PLACEHOLDER' = "
+        f"('$$WERKS_RUN$$', '{tienda}'))"
+    )
+    rest = 't."POS_RESTRINGIDO_VENTA"'
+    notx = 't."NOT_EXIST_POS"'
+    return (
+        f"SELECT '{tienda}' AS tienda, "
+        f"COALESCE(SUM(COALESCE(CAST(t.\"DIFF_PRECIO\" AS INTEGER), 0)), 0) AS cant_diffs_precio, "
+        f"COALESCE(SUM(COALESCE(CAST(t.\"NOT_EXIST_POS\" AS INTEGER), 0)), 0) AS cant_solo_hana, "
+        f"COALESCE(SUM(COALESCE(CAST(t.\"DIFF_RESTRINGIDO\" AS INTEGER), 0)), 0) AS cant_diffs_restringido, "
+        f"MAX(t.\"POS_FECHA_CARGA\") AS ultima_carga_pos "
+        f"FROM ({inner}) t "
+        f"WHERE NOT (({rest} IS NULL OR TRIM({rest}) = '') "
+        f"AND COALESCE({notx}, FALSE) = FALSE)"
+    )
+
+
+def _completar_resumen(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Agrega columnas derivadas (cant_solo_post, total_diffs, estado),
+    normaliza ultima_carga_pos a texto y ordena por total_diffs.
+    """
+    if df.empty:
+        return df
+
+    df["cant_solo_post"] = 0
+    df["total_diffs"] = (
+        df["cant_diffs_precio"] + df["cant_solo_hana"] + df["cant_diffs_restringido"]
+    ).astype(int)
+
+    df["estado"] = "CRITICO"
+    df.loc[df["total_diffs"] < 50, "estado"] = "ALERTA"
+    df.loc[df["total_diffs"] == 0, "estado"] = "OK"
+
+    df["ultima_carga_pos"] = (
+        df["ultima_carga_pos"].where(df["ultima_carga_pos"].notna(), "")
+        .astype(str)
+    )
+
+    return df.sort_values("total_diffs", ascending=False).reset_index(drop=True)
+
+
+def _resumen_secuencial(tiendas: list[str]) -> pd.DataFrame:
+    """Resumen con una query agregada por tienda, aislando errores por tienda."""
+    filas = []
+    errores = set()
+    for t in tiendas:
+        try:
+            df = pd.read_sql(text(_sql_resumen_tienda(t)), db.hana)
+            r = df.iloc[0]
+            filas.append({
+                "tienda":                 t,
+                "cant_diffs_precio":      int(r["cant_diffs_precio"]),
+                "cant_solo_hana":         int(r["cant_solo_hana"]),
+                "cant_diffs_restringido": int(r["cant_diffs_restringido"]),
+                "ultima_carga_pos":       r["ultima_carga_pos"],
+            })
+        except Exception as e:
+            logger.error("get_resumen_tiendas: error en tienda %s: %s", t, e)
+            errores.add(t)
+            filas.append({
+                "tienda":                 t,
+                "cant_diffs_precio":      0,
+                "cant_solo_hana":         0,
+                "cant_diffs_restringido": 0,
+                "ultima_carga_pos":       "",
+            })
+
+    df = _completar_resumen(pd.DataFrame(filas))
+    df.loc[df["tienda"].isin(errores), "estado"] = "ERROR"
+    return df
+
+
 def get_resumen_tiendas() -> pd.DataFrame:
     """
     Resumen de diferencias por tienda.
 
-    Itera las tiendas de stores.json, llama a get_detalle_tienda()
-    y agrega los conteos. Devuelve una fila por tienda con estado.
+    Calcula los conteos en HANA con una sola query UNION ALL (una fila
+    por tienda) en lugar de traer el detalle completo de cada tienda a
+    memoria. Si la query conjunta falla, reintenta tienda por tienda
+    para poder reportar errores individuales.
     """
     tiendas = store_manager.list_stores()
     if not tiendas:
         logger.warning("get_resumen_tiendas: no hay tiendas en stores.json.")
         return pd.DataFrame()
 
-    filas = []
-    for t in tiendas:
-        try:
-            df = get_detalle_tienda(t)
-            # Los subarticulos EAN (restringido_pos NULL que existen en POS)
-            # no se consideran en los counts de diferencias.
-            df = df[~es_subarticulo(df)]
-            cant_precio       = int(df["diff_precio"].fillna(0).astype(bool).sum())       if "diff_precio"       in df.columns else 0
-            cant_hana         = int(df["not_exist_pos"].fillna(0).astype(bool).sum())       if "not_exist_pos"     in df.columns else 0
-            cant_restringido  = int(df["diff_restringido"].fillna(0).astype(bool).sum())   if "diff_restringido" in df.columns else 0
-            total = cant_precio + cant_hana + cant_restringido
-
-            ultima = ""
-            if "fecha_carga_pos" in df.columns:
-                validas = df["fecha_carga_pos"].dropna()
-                if not validas.empty:
-                    ultima = str(validas.iloc[0])
-
-            if total == 0:
-                estado = "OK"
-            elif total < 50:
-                estado = "ALERTA"
-            else:
-                estado = "CRITICO"
-
-            filas.append({
-                "tienda":                 t,
-                "cant_diffs_precio":      cant_precio,
-                "cant_solo_hana":         cant_hana,
-                "cant_solo_post":         0,
-                "cant_diffs_restringido": cant_restringido,
-                "total_diffs":            total,
-                "ultima_carga_post":      ultima,
-                "estado":                 estado,
-            })
-        except Exception as e:
-            logger.error("get_resumen_tiendas: error en tienda %s: %s", t, e)
-            filas.append({
-                "tienda":                 t,
-                "cant_diffs_precio":      0,
-                "cant_solo_hana":         0,
-                "cant_solo_post":         0,
-                "cant_diffs_restringido": 0,
-                "total_diffs":            0,
-                "ultima_carga_post":      "",
-                "estado":                 "ERROR",
-            })
-
-    return pd.DataFrame(filas).sort_values("total_diffs", ascending=False).reset_index(drop=True)
+    try:
+        query = " UNION ALL ".join(_sql_resumen_tienda(t) for t in tiendas)
+        logger.info("Ejecutando query HANA (resumen agregado), tiendas=%d...", len(tiendas))
+        return _completar_resumen(pd.read_sql(text(query), db.hana))
+    except Exception as e:
+        logger.error(
+            "get_resumen_tiendas: falló el resumen conjunto (%s); reintento por tienda.", e
+        )
+        return _resumen_secuencial(tiendas)
 
 
 def get_detalle_tienda(tienda: str) -> pd.DataFrame:
