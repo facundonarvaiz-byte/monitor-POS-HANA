@@ -9,11 +9,23 @@ streamlit run src/app.py                       # dashboard (run from repo root)
 venv\Scripts\python scripts\daily_staging.py   # scheduled POS_STAGING load, all stores
 ```
 
-No tests, linter, formatter, CI, or pyproject exist. `requirements.txt` is the only manifest. Repo is not a git repo (`.gitignore` present but no `.git`).
+No tests, linter, formatter, CI, or pyproject exist. `requirements.txt` is the only manifest. The repo is a git repo (commit inicial + remotes `origin`/GitHub y `deploy`/servidor intranet).
+
+## Despliegue (servidor intranet g100603aws079 / 172.23.18.102)
+
+- `scripts\deploy.ps1` — push a GitHub (`origin`) + servidor (`deploy`). El hook `post-receive` del repo bare hace checkout + pip install + restart automático.
+- Dashboard: `http://g100603aws079/monitor` (Apache reverse proxy → Streamlit 127.0.0.1:8501 con `--server.baseUrlPath monitor`).
+- Servicio systemd `monitor-post-hana` (User=root); log de deploy en `/var/log/monitor-post-hana-deploy.log`.
+- Carga diaria: `/etc/cron.d/monitor-post-hana` a las 05:00 → `scripts/daily_staging.py` (root, log en `logs/daily_staging.log`).
+- Secrets en el server (`/opt/pyapps/monitor-post-hana/`): `.env` (HANA + GESTOR_PASS/REVISOR_PASS) y `stores.json`, ambos `root:root 600` y gitignored.
+- Login del dashboard: usuarios `gestor` / `revisor` (claves en `.env` del server); `revisor` no ve el botón "Cargar Postgres".
+- SSH al server: usuario `ec0326` (sin sudo) + root vía `sudo -n su - -c "<comando>"` (wrapper restrictivo: no acepta `;`/`&&`/`sh <script>`, solo scripts ejecutables o `sh -c`). Los usuarios de AD (`ama5813`) **no** tienen sudo. Clave SSH de la máquina de desarrollo instalada en `/home/CENCOSUD/ec0326/.ssh/authorized_keys`.
+- El venv del server usa **`/usr/bin/python3.11`** (el Python 3.13 de `/usr/local` no tiene `sqlite3`, que `pandas.read_sql` necesita).
+- No tocar: unidades/flask-proxy/tomcat, apache existente, crontab de root, `/srv/www/htdocs`, otros `/opt/*`.
 
 ## Config
 
-- `.env` — HANA credentials only (`HANA_HOST/PORT/USER/PASSWORD/SCHEMA`). Loaded by `src/config.py` from the project root; no env vars needed to run scripts.
+- `.env` — HANA credentials + `GESTOR_PASS`/`REVISOR_PASS` (claves del dashboard). Loaded by `src/config.py` from the project root; no env vars needed to run scripts.
 - `stores.json` (root, gitignored) — per-store PostgreSQL connections keyed by store code (e.g. `E802`). Keys starting with `_` are treated as comments.
 - `.env.example` also has `POSTGRES_*` vars — these are **unused**; per-store PG creds come only from `stores.json`. `HANA_SCHEMA` is also unused: HANA object names are hardcoded.
 

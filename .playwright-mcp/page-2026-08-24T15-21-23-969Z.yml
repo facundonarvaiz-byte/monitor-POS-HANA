@@ -1,0 +1,25 @@
+- generic [ref=f1e3]:
+  - banner [ref=f1e6]:
+    - button "Main menu" [ref=f1e11] [cursor=pointer]
+  - generic [ref=f1e15]:
+    - generic [ref=f1e309]:
+      - heading "🔍 Monitor POST vs HANA" [level=2] [ref=f1e311]:
+        - text: 🔍 Monitor POST vs HANA
+        - generic [ref=f1e312]:
+          - link "Link to heading":
+            - /url: "#monitor-post-vs-hana"
+      - paragraph [ref=f1e313]: Ingresá para continuar
+    - generic [ref=f1e315]:
+      - generic [ref=f1e317]:
+        - paragraph [ref=f1e321]: Usuario
+        - textbox "Usuario" [ref=f1e324]:
+          - /placeholder: gestor o revisor
+      - generic [ref=f1e326]:
+        - paragraph [ref=f1e330]: Contraseña
+        - generic [ref=f1e332]:
+          - textbox "Contraseña" [ref=f1e333]:
+            - /placeholder: ""
+          - button "Show password" [ref=f1e335] [cursor=pointer]:
+            - generic [ref=f1e336]: visibility
+      - button [ref=f1e341] [cursor=pointer]:
+        - paragraph [ref=f1e346]: Ingresar

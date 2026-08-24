@@ -1,0 +1,107 @@
+- generic [ref=f1e2]:
+  - generic [ref=f1e352]:
+    - heading "🔍 Monitor POST vs HANA" [level=1] [ref=f1e356]
+    - paragraph [ref=f1e361]: v2.0
+    - paragraph [ref=f1e366]:
+      - text: "👤 Sesión:"
+      - strong [ref=f1e367]: gestor
+    - button [ref=f1e370] [cursor=pointer]:
+      - paragraph [ref=f1e375]: 🚪 Cerrar sesión
+    - separator [ref=f1e380]
+    - button [ref=f1e383] [cursor=pointer]:
+      - paragraph [ref=f1e388]: 🔄 Actualizar datos
+    - button [ref=f1e391] [cursor=pointer]:
+      - paragraph [ref=f1e396]: ⬆️ Cargar Postgres (todas las tiendas)
+  - generic [ref=f1e3]:
+    - banner [ref=f1e6]:
+      - button "Main menu" [ref=f1e11] [cursor=pointer]
+    - generic [ref=f1e15]:
+      - heading "📊 Resumen de diferencias por tienda" [level=3] [ref=f1e402]:
+        - text: 📊 Resumen de diferencias por tienda
+        - generic [ref=f1e403]:
+          - link "Link to heading":
+            - /url: "#resumen-de-diferencias-por-tienda"
+      - generic [ref=f1e404]:
+        - generic [ref=f1e409]:
+          - paragraph [ref=f1e413]: Tiendas monitoreadas
+          - paragraph [ref=f1e416]: "4"
+        - generic [ref=f1e421]:
+          - paragraph [ref=f1e425]: Tiendas CRITICAS 🔴
+          - paragraph [ref=f1e428]: "0"
+        - generic [ref=f1e433]:
+          - paragraph [ref=f1e437]: Diferencias totales
+          - paragraph [ref=f1e440]: "0"
+      - separator [ref=f1e445]
+      - generic [ref=f1e451]:
+        - img:
+          - generic:
+            - generic:
+              - generic:
+                - generic: E800
+                - generic: E802
+                - generic: E805
+                - generic: E812
+              - generic:
+                - generic: −1
+                - generic: −0.5
+                - generic: "0"
+                - generic: "0.5"
+                - generic: "1"
+        - img:
+          - generic:
+            - generic [ref=f1e467]:
+              - generic [ref=f1e468]: estado
+              - generic [ref=f1e470]:
+                - generic [ref=f1e471]: ERROR
+                - generic [ref=f1e476] [cursor=pointer]
+            - generic: Diferencias totales por tienda
+            - generic: Tienda
+            - generic: Diferencias
+        - toolbar [ref=f1e477]:
+          - button "Download plot as a PNG" [ref=f1e479] [cursor=pointer]
+          - generic [ref=f1e482]:
+            - button "Zoom" [ref=f1e483] [cursor=pointer]
+            - button "Pan" [ref=f1e486] [cursor=pointer]
+          - generic [ref=f1e489]:
+            - button "Zoom in" [ref=f1e490] [cursor=pointer]
+            - button "Zoom out" [ref=f1e493] [cursor=pointer]
+            - button "Autoscale" [ref=f1e496] [cursor=pointer]
+            - button "Reset axes" [ref=f1e499] [cursor=pointer]
+          - button "Fullscreen" [ref=f1e503] [cursor=pointer]
+      - separator [ref=f1e510]
+      - generic [ref=f1e512]:
+        - paragraph [ref=f1e519]:
+          - text: ⚫
+          - strong [ref=f1e520]: E800
+          - text: "| Total:"
+          - strong [ref=f1e521]: "0"
+          - text: "| Precio: 0 | Restringido: 0 | Solo HANA: 0"
+        - button [ref=f1e526] [cursor=pointer]:
+          - paragraph [ref=f1e531]: Ver detalle →
+      - generic [ref=f1e533]:
+        - paragraph [ref=f1e540]:
+          - text: ⚫
+          - strong [ref=f1e541]: E802
+          - text: "| Total:"
+          - strong [ref=f1e542]: "0"
+          - text: "| Precio: 0 | Restringido: 0 | Solo HANA: 0"
+        - button [ref=f1e547] [cursor=pointer]:
+          - paragraph [ref=f1e552]: Ver detalle →
+      - generic [ref=f1e554]:
+        - paragraph [ref=f1e561]:
+          - text: ⚫
+          - strong [ref=f1e562]: E805
+          - text: "| Total:"
+          - strong [ref=f1e563]: "0"
+          - text: "| Precio: 0 | Restringido: 0 | Solo HANA: 0"
+        - button [ref=f1e568] [cursor=pointer]:
+          - paragraph [ref=f1e573]: Ver detalle →
+      - generic [ref=f1e575]:
+        - paragraph [ref=f1e582]:
+          - text: ⚫
+          - strong [ref=f1e583]: E812
+          - text: "| Total:"
+          - strong [ref=f1e584]: "0"
+          - text: "| Precio: 0 | Restringido: 0 | Solo HANA: 0"
+        - button [ref=f1e589] [cursor=pointer]:
+          - paragraph [ref=f1e594]: Ver detalle →
