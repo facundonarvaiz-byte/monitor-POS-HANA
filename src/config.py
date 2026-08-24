@@ -91,6 +91,12 @@ db = DatabaseConnection()
 
 _STORES_JSON = Path(__file__).resolve().parent.parent / "stores.json"
 
+# Tabla HANA de tiendas habilitadas — la lista de tiendas activas sale de acá.
+# stores.json contiene todas las tiendas con credenciales; solo se procesan
+# las que existen en Z_NCR_WERKS_SEL (no hace falta editar stores.json para
+# habilitar/deshabilitar tiendas).
+_TABLA_WERKS_SEL = '"Z_NCR_CO"."Z_NCR_WERKS_SEL"'
+
 
 class StoreConnectionManager:
     """
@@ -147,8 +153,41 @@ class StoreConnectionManager:
         return self._engines[store_code]
 
     def list_stores(self) -> list[str]:
-        """Lista los códigos de tienda configurados en stores.json."""
-        return sorted(self._configs.keys())
+        """
+        Lista las tiendas activas: las habilitadas en la tabla HANA
+        Z_NCR_WERKS_SEL que además tengan credenciales en stores.json.
+
+        stores.json queda fijo con todas las tiendas; la habilitación se
+        maneja agregando/quitando filas en la tabla HANA.
+        """
+        try:
+            with db.hana.connect() as conn:
+                werks = conn.execute(
+                    text(f'SELECT "WERKS" FROM {_TABLA_WERKS_SEL}')
+                ).scalars().all()
+        except Exception as e:
+            logger.error("Error leyendo %s: %s", _TABLA_WERKS_SEL, e)
+            return []
+
+        habilitadas = {str(w).strip() for w in werks}
+        activas = sorted(h for h in habilitadas if h in self._configs)
+
+        excluidas = sorted(set(self._configs) - habilitadas)
+        if excluidas:
+            logger.info(
+                "Tiendas en stores.json no habilitadas en %s (se omiten): %s",
+                _TABLA_WERKS_SEL,
+                excluidas,
+            )
+        no_config = sorted(habilitadas - set(self._configs))
+        if no_config:
+            logger.warning(
+                "Tiendas habilitadas en %s sin credenciales en stores.json (se omiten): %s",
+                _TABLA_WERKS_SEL,
+                no_config,
+            )
+
+        return activas
 
 
 # Instancia global del gestor de tiendas
