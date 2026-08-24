@@ -4,13 +4,14 @@ Ejecutar con: streamlit run src/app.py
 """
 
 import math
+import os
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 
 from config import logger
-from hana_queries import get_resumen_tiendas, get_detalle_tienda
+from hana_queries import get_resumen_tiendas, get_detalle_tienda, es_subarticulo
 from post_queries import populate_pos_staging, listar_tiendas_postgres
 
 
@@ -34,10 +35,55 @@ defaults = {
     "tienda_seleccionada": None,
     "df_resumen": None,
     "df_detalle": None,
+    "ver_subarticulos": False,
+    "autenticado": False,
+    "rol": None,
 }
 for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
+
+
+# ============================================================
+# AUTENTICACION — roles: gestor (con acciones) / revisor (solo lectura)
+# Las claves se leen del .env (GESTOR_PASS / REVISOR_PASS)
+# ============================================================
+
+_AUTH_ROLES = {"gestor": "GESTOR_PASS", "revisor": "REVISOR_PASS"}
+
+
+def _autenticar(usuario: str, clave: str) -> bool:
+    var = _AUTH_ROLES.get(usuario.strip().lower())
+    if not var:
+        return False
+    return clave == os.getenv(var, "")
+
+
+def _login_ui():
+    st.markdown(
+        "<div style='text-align:center; margin-top:8vh'>"
+        "<h2>🔍 Monitor POST vs HANA</h2>"
+        "<p style='color:#888'>Ingresá para continuar</p>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    with st.form("login"):
+        usuario = st.text_input("Usuario", placeholder="gestor o revisor")
+        clave = st.text_input("Contraseña", type="password")
+        enviar = st.form_submit_button("Ingresar", type="primary", use_container_width=True)
+
+    if enviar:
+        if _autenticar(usuario, clave):
+            st.session_state.autenticado = True
+            st.session_state.rol = usuario.strip().lower()
+            st.rerun()
+        else:
+            st.error("Usuario o contraseña incorrectos.")
+
+
+if not st.session_state.autenticado:
+    _login_ui()
+    st.stop()
 
 
 # ============================================================
@@ -68,6 +114,7 @@ def _cargar_detalle(tienda: str):
             st.session_state.df_detalle = get_detalle_tienda(tienda)
             st.session_state.tienda_seleccionada = tienda
             st.session_state.pagina_detalle = 1  # resetear paginación
+            st.session_state.ver_subarticulos = False
         except Exception as ex:
             st.error(f"Error cargando detalle de {tienda}: {ex}")
             logger.exception("Error en get_detalle_tienda")
@@ -87,6 +134,12 @@ if st.session_state.df_resumen is None:
 
 st.sidebar.title("🔍 Monitor POST vs HANA")
 st.sidebar.caption("v2.0")
+st.sidebar.caption(f"👤 Sesión: **{st.session_state.rol}**")
+if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
+    st.session_state.autenticado = False
+    st.session_state.rol = None
+    st.rerun()
+st.sidebar.markdown("---")
 
 if st.session_state.tienda_seleccionada:
     if st.sidebar.button("← Volver al resumen", use_container_width=True):
@@ -107,7 +160,11 @@ lbl_staging = (
     if st.session_state.tienda_seleccionada
     else "⬆️ Cargar Postgres (todas las tiendas)"
 )
-btn_staging = st.sidebar.button(lbl_staging, use_container_width=True)
+btn_staging = None
+if st.session_state.rol == "gestor":
+    btn_staging = st.sidebar.button(lbl_staging, use_container_width=True)
+else:
+    st.sidebar.caption("🔒 Solo lectura — la carga de staging la ejecuta un gestor.")
 
 
 # ============================================================
@@ -166,6 +223,11 @@ if st.session_state.tienda_seleccionada and st.session_state.df_detalle is not N
     tienda = st.session_state.tienda_seleccionada
     df_det = st.session_state.df_detalle
 
+    # Subarticulos EAN (restringido_pos NULL que existen en POS) van a una vista aparte
+    es_sub = es_subarticulo(df_det)
+    df_principales = df_det[~es_sub]
+    df_subarticulos = df_det[es_sub]
+
     st.subheader(f"📋 Tienda **{tienda}** — Detalle de diferencias")
 
     if df_det.empty:
@@ -173,9 +235,9 @@ if st.session_state.tienda_seleccionada and st.session_state.df_detalle is not N
     else:
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Total productos", f"{len(df_det):,}")
-        if "tipo_diferencia" in df_det.columns:
-            tipos = df_det["tipo_diferencia"]
+            st.metric("Total productos", f"{len(df_principales):,}")
+        if "tipo_diferencia" in df_principales.columns:
+            tipos = df_principales["tipo_diferencia"]
             with col2:
                 st.metric("Diffs precio 💰", int((tipos == "PRECIO").sum()))
             with col3:
@@ -212,13 +274,13 @@ if st.session_state.tienda_seleccionada and st.session_state.df_detalle is not N
         col_filtro, col_info, col_dl = st.columns([4, 3, 1])
 
         with col_filtro:
-            if "tipo_diferencia" in df_det.columns:
-                tipos_disp = sorted(df_det["tipo_diferencia"].dropna().unique())
+            if "tipo_diferencia" in df_principales.columns:
+                tipos_disp = sorted(df_principales["tipo_diferencia"].dropna().unique())
                 default_sel = ["PRECIO"] if "PRECIO" in tipos_disp else tipos_disp
                 tipos_sel = st.multiselect("Tipo de diferencia", tipos_disp, default=default_sel)
-                df_vista = df_det[df_det["tipo_diferencia"].isin(tipos_sel)]
+                df_vista = df_principales[df_principales["tipo_diferencia"].isin(tipos_sel)]
             else:
-                df_vista = df_det
+                df_vista = df_principales
 
         csv = df_vista.to_csv(index=False).encode("utf-8")
 
@@ -240,6 +302,44 @@ if st.session_state.tienda_seleccionada and st.session_state.df_detalle is not N
             hide_index=True,
             height=620,
         )
+
+        # ── Subarticulos EANS ─────────────────────────────────
+        st.markdown("---")
+
+        if df_subarticulos.empty:
+            st.caption("🔗 No hay subarticulos EANS (restringido POS NULL) para esta tienda.")
+        else:
+            lbl_sub = (
+                "✖ Ocultar subarticulos EANS"
+                if st.session_state.ver_subarticulos
+                else f"🔗 Vista con todos los subarticulos EANS ({len(df_subarticulos):,})"
+            )
+            if st.button(lbl_sub, use_container_width=True):
+                st.session_state.ver_subarticulos = not st.session_state.ver_subarticulos
+                st.rerun()
+
+            if st.session_state.ver_subarticulos:
+                st.subheader("🧩 Subarticulos EANS (restringido POS NULL)")
+                col_sub_info, col_sub_dl = st.columns([4, 1])
+                with col_sub_info:
+                    st.caption(
+                        f"{len(df_subarticulos):,} filas — usá el 🔍 de la grilla para buscar y las cabeceras para ordenar"
+                    )
+                with col_sub_dl:
+                    csv_sub = df_subarticulos.to_csv(index=False).encode("utf-8")
+                    st.download_button(
+                        "📥 Exportar CSV",
+                        data=csv_sub,
+                        file_name=f"subarticulos_{tienda}.csv",
+                        mime="text/csv",
+                        use_container_width=True,
+                    )
+                st.dataframe(
+                    df_subarticulos.rename(columns=_col_labels),
+                    use_container_width=True,
+                    hide_index=True,
+                    height=620,
+                )
 
 
 # -- VISTA RESUMEN -------------------------------------------

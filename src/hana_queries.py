@@ -18,6 +18,22 @@ _TABLA_POS_STAGING_LOG = '"Z_NCR_CO"."Z_NCRCO.Pos_staging::POS_STAGING_LOG"'
 
 
 
+def es_subarticulo(df: pd.DataFrame) -> pd.Series:
+    """
+    True si la fila es un subarticulo EAN: sin restriccion de venta en POS
+    (restringido_pos NULL o vacio) y con match en POS (no es solo HANA).
+
+    Estas filas se excluyen de la vista principal y de los counts de diferencias.
+    """
+    if "restringido_pos" not in df.columns or "not_exist_pos" not in df.columns:
+        return pd.Series(False, index=df.index)
+    sin_restriccion = df["restringido_pos"].isna() | (
+        df["restringido_pos"].astype(str).str.strip() == ""
+    )
+    existe_en_pos = ~df["not_exist_pos"].fillna(0).astype(bool)
+    return sin_restriccion & existe_en_pos
+
+
 def get_resumen_tiendas() -> pd.DataFrame:
     """
     Resumen de diferencias por tienda.
@@ -34,6 +50,9 @@ def get_resumen_tiendas() -> pd.DataFrame:
     for t in tiendas:
         try:
             df = get_detalle_tienda(t)
+            # Los subarticulos EAN (restringido_pos NULL que existen en POS)
+            # no se consideran en los counts de diferencias.
+            df = df[~es_subarticulo(df)]
             cant_precio       = int(df["diff_precio"].fillna(0).astype(bool).sum())       if "diff_precio"       in df.columns else 0
             cant_hana         = int(df["not_exist_pos"].fillna(0).astype(bool).sum())       if "not_exist_pos"     in df.columns else 0
             cant_restringido  = int(df["diff_restringido"].fillna(0).astype(bool).sum())   if "diff_restringido" in df.columns else 0
