@@ -11,8 +11,17 @@ import pandas as pd
 import plotly.express as px
 
 from config import logger
-from hana_queries import get_resumen_tiendas, get_detalle_tienda, es_subarticulo
-from post_queries import populate_pos_staging, listar_tiendas_postgres
+from hana_queries import (
+    get_resumen_tiendas,
+    get_detalle_tienda,
+    get_logs_staging,
+    es_subarticulo,
+)
+from post_queries import (
+    populate_pos_staging,
+    listar_tiendas_postgres,
+    actualizar_pos_staging_por_sku,
+)
 
 
 # ============================================================
@@ -35,6 +44,8 @@ defaults = {
     "tienda_seleccionada": None,
     "df_resumen": None,
     "df_detalle": None,
+    "df_logs": None,
+    "ver_logs": False,
     "ver_subarticulos": False,
     "autenticado": False,
     "rol": None,
@@ -115,9 +126,19 @@ def _cargar_detalle(tienda: str):
             st.session_state.tienda_seleccionada = tienda
             st.session_state.pagina_detalle = 1  # resetear paginación
             st.session_state.ver_subarticulos = False
+            st.session_state.ver_logs = False
         except Exception as ex:
             st.error(f"Error cargando detalle de {tienda}: {ex}")
             logger.exception("Error en get_detalle_tienda")
+
+
+def _cargar_logs():
+    with st.spinner("Cargando logs de staging..."):
+        try:
+            st.session_state.df_logs = get_logs_staging()
+        except Exception as ex:
+            st.error(f"Error cargando logs: {ex}")
+            logger.exception("Error en get_logs_staging")
 
 
 # ============================================================
@@ -141,7 +162,15 @@ if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
     st.rerun()
 st.sidebar.markdown("---")
 
-if st.session_state.tienda_seleccionada:
+if st.session_state.ver_logs:
+    if st.sidebar.button("← Volver al resumen", use_container_width=True):
+        st.session_state.ver_logs = False
+        st.session_state.tienda_seleccionada = None
+        st.session_state.df_detalle = None
+        st.session_state.df_logs = None
+        st.rerun()
+    st.sidebar.markdown("---")
+elif st.session_state.tienda_seleccionada:
     if st.sidebar.button("← Volver al resumen", use_container_width=True):
         st.session_state.tienda_seleccionada = None
         st.session_state.df_detalle = None
@@ -166,16 +195,24 @@ if st.session_state.rol == "gestor":
 else:
     st.sidebar.caption("🔒 Solo lectura — la carga de staging la ejecuta un gestor.")
 
+btn_logs = st.sidebar.button("📜 Ver logs de staging", use_container_width=True)
+
 
 # ============================================================
 # LOGICA DE BOTONES
 # ============================================================
 
 if btn_actualizar:
-    if st.session_state.tienda_seleccionada:
+    if st.session_state.ver_logs:
+        _cargar_logs()
+    elif st.session_state.tienda_seleccionada:
         _cargar_detalle(st.session_state.tienda_seleccionada)
     else:
         _cargar_resumen()
+
+if btn_logs:
+    st.session_state.ver_logs = True
+    _cargar_logs()
 
 if btn_staging:
     if st.session_state.tienda_seleccionada:
@@ -217,9 +254,69 @@ if btn_staging:
 # CUERPO PRINCIPAL
 # ============================================================
 
+# -- VISTA LOGS DE STAGING -----------------------------------
+
+if st.session_state.ver_logs:
+    if st.session_state.df_logs is None:
+        _cargar_logs()
+
+    df_logs = st.session_state.df_logs
+
+    st.subheader("📜 Log de cargas POS_STAGING")
+
+    if df_logs is None or df_logs.empty:
+        st.info("No hay registros en el log de staging.")
+    else:
+        ok_count  = int((df_logs["estado"] == "OK").sum())
+        err_count = int((df_logs["estado"] == "ERROR").sum())
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Registros mostrados", len(df_logs))
+        with col2:
+            st.metric("Cargas OK ✅", ok_count)
+        with col3:
+            st.metric("Cargas con ERROR ❌", err_count)
+
+        st.markdown("---")
+
+        col_info, col_dl = st.columns([4, 1])
+        with col_info:
+            st.caption("Últimas 200 ejecuciones — las más recientes primero. Usá el 🔍 de la grilla para filtrar.")
+        with col_dl:
+            csv_logs = df_logs.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "📥 Exportar CSV",
+                data=csv_logs,
+                file_name="logs_staging.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+
+        df_estado = df_logs.copy()
+        df_estado["estado"] = df_estado["estado"].map(
+            {"OK": "✅ OK", "ERROR": "❌ ERROR"}
+        ).fillna(df_estado["estado"])
+
+        st.dataframe(
+            df_estado.rename(columns={
+                "id":        "ID",
+                "tienda":    "Tienda",
+                "inicio":    "Inicio",
+                "fin":       "Fin",
+                "registros": "Registros",
+                "estado":    "Estado",
+                "mensaje":   "Mensaje",
+            }),
+            use_container_width=True,
+            hide_index=True,
+            height=620,
+        )
+
+
 # -- VISTA DETALLE -------------------------------------------
 
-if st.session_state.tienda_seleccionada and st.session_state.df_detalle is not None:
+elif st.session_state.tienda_seleccionada and st.session_state.df_detalle is not None:
     tienda = st.session_state.tienda_seleccionada
     df_det = st.session_state.df_detalle
 
@@ -302,6 +399,53 @@ if st.session_state.tienda_seleccionada and st.session_state.df_detalle is not N
             hide_index=True,
             height=620,
         )
+
+        # ── Actualización por producto (solo gestor) ─────────
+        st.markdown("---")
+
+        if st.session_state.rol == "gestor":
+            corregibles = df_principales[
+                df_principales["tipo_diferencia"].isin(["PRECIO", "RESTRINGIDO"])
+            ]
+            with st.expander("⬆️ Actualizar un producto (por SKU)", expanded=False):
+                if corregibles.empty:
+                    st.caption("No hay diferencias de PRECIO/RESTRINGIDO corregibles en esta tienda.")
+                else:
+                    opciones = (
+                        corregibles[["sku", "descripcion_hana", "tipo_diferencia"]]
+                        .dropna(subset=["sku"])
+                        .drop_duplicates("sku")
+                        .sort_values("sku")
+                        .reset_index(drop=True)
+                    )
+                    skus = opciones["sku"].astype(str).tolist()
+                    etiquetas = []
+                    for _, r in opciones.iterrows():
+                        desc = str(r.get("descripcion_hana") or "")[:45]
+                        etiquetas.append(f"{r['sku']} — {desc} ({r['tipo_diferencia']})")
+
+                    sku_sel = st.selectbox(
+                        "Producto a actualizar",
+                        skus,
+                        format_func=lambda s: etiquetas[skus.index(s)],
+                    )
+                    if st.button(
+                        f"⬆️ Actualizar registro {sku_sel}",
+                        type="primary",
+                        use_container_width=True,
+                    ):
+                        with st.spinner(f"Actualizando SKU {sku_sel} desde el POS de {tienda}..."):
+                            res = actualizar_pos_staging_por_sku(tienda, sku_sel)
+                        if res["ok"]:
+                            st.success(
+                                f"✅ SKU {sku_sel} actualizado — {res['registros']} registro(s) en staging."
+                            )
+                            _cargar_detalle(tienda)
+                            st.rerun()
+                        else:
+                            st.error(f"❌ Error actualizando SKU {sku_sel}: {res.get('error')}")
+        else:
+            st.caption("🔒 La actualización por producto la ejecuta un gestor.")
 
         # ── Subarticulos EANS ─────────────────────────────────
         st.markdown("---")

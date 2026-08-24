@@ -10,6 +10,7 @@ Tabla destino: Z_NCR_CO.Z_NCRCO.Pos_staging::POS_STAGING
 
 from __future__ import annotations
 
+import re
 import time
 from datetime import datetime
 
@@ -21,6 +22,35 @@ from config import logger, store_manager, db as hana_db
 # Tablas HANA
 _TABLA_POS_STAGING     = '"Z_NCR_CO"."Z_NCRCO.Pos_staging::POS_STAGING"'
 _TABLA_POS_STAGING_LOG = '"Z_NCR_CO"."Z_NCRCO.Pos_staging::POS_STAGING_LOG"'
+
+# Lectura desde el PostgreSQL de la tienda — mismo SELECT para la carga
+# completa (populate_pos_staging) y para la actualización por SKU.
+_SELECT_ARTICULO_PG = """
+SELECT
+    :tienda                                              AS tienda,
+    LTRIM(TRIM(a.article_number::text), '0')          AS ean,
+    COALESCE(ae.sku_number::bigint, a.mainplunumber::bigint)::text AS sku,
+    CASE
+        WHEN a.designation <> '' THEN a.designation
+        ELSE (SELECT designation FROM article
+              WHERE article_number =  a.mainplunumber
+                AND designation <> ''
+              LIMIT 1)
+    END                                                  AS descripcion,
+    CASE
+        WHEN a.price IS NOT NULL AND a.price <> 0 THEN a.price
+        ELSE (SELECT price FROM article
+              WHERE article_number =  a.mainplunumber
+                AND price <> 0
+              LIMIT 1)
+    END                                                  AS precio_pos,
+    SUBSTRING(ae.ext_structure_code, 17, 1)              AS restringido_venta,
+    TO_CHAR(TO_TIMESTAMP(a.datelastmodified::TEXT, 'YYMMDDHH24MISS'),
+            'YYYY-MM-DD HH24:MI:SS')                      AS fecha_carga
+FROM article a
+LEFT JOIN article_extended ae ON a.article_number = ae.article_number
+INNER JOIN department d       ON a.department_number = d.department_number
+"""
 
 
 # ============================================================
@@ -76,6 +106,33 @@ def listar_tiendas_postgres() -> list[str]:
     return store_manager.list_stores()
 
 
+def _insertar_lotes_staging(conn, df: pd.DataFrame) -> None:
+    """
+    Inserta df en POS_STAGING por lotes de 500 filas.
+    Asume que el DELETE previo ya se ejecutó sobre la misma conexión.
+    """
+    BATCH = 500
+    insert_sql = text(
+        f'INSERT INTO {_TABLA_POS_STAGING} '
+        f'("TIENDA","EAN","SKU","DESCRIPCION","PRECIO_POS","RESTRINGIDO_VENTA","FECHA_CARGA") '
+        f'VALUES (:tienda,:ean,:sku,:descripcion,:precio_pos,:restringido_venta,:fecha_carga)'
+    )
+    for i in range(0, len(df), BATCH):
+        chunk = df.iloc[i:i + BATCH]
+        rows = []
+        for _, r in chunk.iterrows():
+            rows.append({
+                "tienda":            str(r["tienda"]) if pd.notna(r["tienda"]) else "",
+                "ean":               str(r["ean"])    if pd.notna(r["ean"])    else "",
+                "sku":               str(r["sku"])    if pd.notna(r["sku"])    else "",
+                "descripcion":       str(r["descripcion"])       if pd.notna(r["descripcion"])       else None,
+                "precio_pos":        str(r["precio_pos"])        if pd.notna(r["precio_pos"])        else None,
+                "restringido_venta": str(r["restringido_venta"]) if pd.notna(r["restringido_venta"]) else None,
+                "fecha_carga":       str(r["fecha_carga"])       if pd.notna(r["fecha_carga"])       else None,
+            })
+        conn.execute(insert_sql, rows)
+
+
 def populate_pos_staging(tienda: str) -> dict:
     """
     Lee datos del PostgreSQL local de la tienda y los escribe en HANA POS_STAGING.
@@ -97,31 +154,8 @@ def populate_pos_staging(tienda: str) -> dict:
     inicio = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     # ── 1. Leer desde PostgreSQL ──────────────────────────────
-    query_pg = """
-    SELECT
-        :tienda                                              AS tienda,
-        LTRIM(TRIM(a.article_number::text), '0')          AS ean,
-        COALESCE(ae.sku_number::bigint, a.mainplunumber::bigint)::text AS sku,
-        CASE
-            WHEN a.designation <> '' THEN a.designation
-            ELSE (SELECT designation FROM article
-                  WHERE article_number =  a.mainplunumber
-                    AND designation <> ''
-                  LIMIT 1)
-        END                                                  AS descripcion,
-        CASE
-            WHEN a.price IS NOT NULL AND a.price <> 0 THEN a.price
-            ELSE (SELECT price FROM article
-                  WHERE article_number =  a.mainplunumber
-                    AND price <> 0
-                  LIMIT 1)
-        END                                                  AS precio_pos,
-        SUBSTRING(ae.ext_structure_code, 17, 1)              AS restringido_venta,
-        TO_CHAR(TO_TIMESTAMP(a.datelastmodified::TEXT, 'YYMMDDHH24MISS'),
-                'YYYY-MM-DD HH24:MI:SS')                      AS fecha_carga
-    FROM article a
-    LEFT JOIN article_extended ae ON a.article_number = ae.article_number
-    INNER JOIN department d       ON a.department_number = d.department_number
+    query_pg = f"""
+    {_SELECT_ARTICULO_PG}
     ORDER BY ae.sku_number
     """
     
@@ -146,26 +180,7 @@ def populate_pos_staging(tienda: str) -> dict:
             )
 
             # INSERT por lotes de 500
-            BATCH = 500
-            insert_sql = text(
-                f'INSERT INTO {_TABLA_POS_STAGING} '
-                f'("TIENDA","EAN","SKU","DESCRIPCION","PRECIO_POS","RESTRINGIDO_VENTA","FECHA_CARGA") '
-                f'VALUES (:tienda,:ean,:sku,:descripcion,:precio_pos,:restringido_venta,:fecha_carga)'
-            )
-            for i in range(0, len(df), BATCH):
-                chunk = df.iloc[i:i + BATCH]
-                rows = []
-                for _, r in chunk.iterrows():
-                    rows.append({
-                        "tienda":            str(r["tienda"]) if pd.notna(r["tienda"]) else "",
-                        "ean":               str(r["ean"])    if pd.notna(r["ean"])    else "",
-                        "sku":               str(r["sku"])    if pd.notna(r["sku"])    else "",
-                        "descripcion":       str(r["descripcion"])       if pd.notna(r["descripcion"])       else None,
-                        "precio_pos":        str(r["precio_pos"])        if pd.notna(r["precio_pos"])        else None,
-                        "restringido_venta": str(r["restringido_venta"]) if pd.notna(r["restringido_venta"]) else None,
-                        "fecha_carga":       str(r["fecha_carga"])       if pd.notna(r["fecha_carga"])       else None,
-                    })
-                conn.execute(insert_sql, rows)
+            _insertar_lotes_staging(conn, df)
             conn.commit()
 
         fin = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -180,4 +195,79 @@ def populate_pos_staging(tienda: str) -> dict:
         logger.error("populate_pos_staging: error escribiendo HANA tienda=%s: %s", tienda, e)
         _write_staging_log(tienda, inicio, fin, 0, "ERROR", f"Escritura HANA: {e}")
         return {"tienda": tienda, "registros": 0, "duracion_ms": dur, "ok": False, "error": str(e)}
+
+
+def actualizar_pos_staging_por_sku(tienda: str, sku: str) -> dict:
+    """
+    Actualiza el staging de un único producto (SKU) para una tienda.
+
+    Lee del PostgreSQL de la tienda todos los registros con ese SKU
+    (puede haber varios EAN del mismo SKU) y los reemplaza en HANA
+    POS_STAGING (DELETE por TIENDA+SKU + INSERT).
+
+    Si el producto ya no existe en el POS de la tienda, elimina sus filas
+    del staging (equivale a la baja que haría la carga completa).
+
+    Returns
+    -------
+    dict
+        {"tienda", "sku", "registros", "duracion_ms", "ok", "error"?}
+    """
+    sku = str(sku).strip()
+    if not re.match(r'^[A-Za-z0-9]+$', tienda):
+        raise ValueError(f"Código de tienda inválido: {tienda!r}")
+    if not sku:
+        raise ValueError("SKU vacío")
+
+    start = time.time()
+    inicio = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    query_pg = f"""
+    {_SELECT_ARTICULO_PG}
+    WHERE COALESCE(ae.sku_number::bigint, a.mainplunumber::bigint)::text = :sku
+    ORDER BY ae.sku_number
+    """
+
+    try:
+        engine_pg = store_manager.get_engine(tienda)
+        df = pd.read_sql(
+            text(query_pg),
+            engine_pg,
+            params={"tienda": tienda, "sku": sku},
+        )
+        logger.info("actualizar_pos_staging_por_sku: %d filas leídas de PostgreSQL tienda=%s sku=%s", len(df), tienda, sku)
+    except Exception as e:
+        fin = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        dur = int((time.time() - start) * 1000)
+        logger.error("actualizar_pos_staging_por_sku: error leyendo PostgreSQL tienda=%s sku=%s: %s", tienda, sku, e)
+        _write_staging_log(tienda, inicio, fin, 0, "ERROR", f"SKU {sku} — Lectura PG: {e}")
+        return {"tienda": tienda, "sku": sku, "registros": 0, "duracion_ms": dur, "ok": False, "error": str(e)}
+
+    try:
+        with hana_db.hana.connect() as conn:
+            # DELETE de las filas de este SKU (y reemplazo total abajo)
+            conn.execute(
+                text(f'DELETE FROM {_TABLA_POS_STAGING} WHERE "TIENDA" = :t AND "SKU" = :s'),
+                {"t": tienda, "s": sku},
+            )
+
+            if not df.empty:
+                _insertar_lotes_staging(conn, df)
+            conn.commit()
+
+        fin = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        dur = int((time.time() - start) * 1000)
+        mensaje = f"SKU {sku}"
+        if df.empty:
+            mensaje += " — no existe en POS, se eliminó del staging"
+        logger.info("actualizar_pos_staging_por_sku: %d registros en staging tienda=%s sku=%s (%dms)", len(df), tienda, sku, dur)
+        _write_staging_log(tienda, inicio, fin, len(df), "OK", mensaje)
+        return {"tienda": tienda, "sku": sku, "registros": len(df), "duracion_ms": dur, "ok": True}
+
+    except Exception as e:
+        fin = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        dur = int((time.time() - start) * 1000)
+        logger.error("actualizar_pos_staging_por_sku: error escribiendo HANA tienda=%s sku=%s: %s", tienda, sku, e)
+        _write_staging_log(tienda, inicio, fin, 0, "ERROR", f"SKU {sku} — Escritura HANA: {e}")
+        return {"tienda": tienda, "sku": sku, "registros": 0, "duracion_ms": dur, "ok": False, "error": str(e)}
 

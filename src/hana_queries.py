@@ -152,3 +152,27 @@ def get_detalle_tienda(tienda: str) -> pd.DataFrame:
     logger.info("Diferencias para tienda %s: %d filas", tienda, len(df))
     return df
 
+
+def get_logs_staging(limite: int = 200) -> pd.DataFrame:
+    """
+    Últimos registros de POS_STAGING_LOG ordenados por ID descendente
+    (los más recientes primero).
+
+    Columnas: id, tienda, inicio, fin, registros, estado, mensaje.
+    """
+    query = f"""
+    SELECT
+        "ID"        AS id,
+        "TIENDA"    AS tienda,
+        "INICIO"    AS inicio,
+        "FIN"       AS fin,
+        "REGISTROS" AS registros,
+        "ESTADO"    AS estado,
+        "MENSAJE"   AS mensaje
+    FROM {_TABLA_POS_STAGING_LOG}
+    ORDER BY "ID" DESC
+    LIMIT {int(limite)}
+    """
+    logger.info("Ejecutando query HANA (log staging), limite=%s...", limite)
+    return pd.read_sql(text(query), db.hana)
+
