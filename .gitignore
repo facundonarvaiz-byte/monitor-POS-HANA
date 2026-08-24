@@ -13,3 +13,6 @@ __pycache__/
 
 # Streamlit cache
 .streamlit/
+
+# Artefactos de pruebas de navegador
+.playwright-mcp/
