@@ -68,5 +68,6 @@ Unidades/flask-proxy/tomcat, apache existente, crontab de root, `/srv/www/htdocs
 - Los identificadores HANA están hardcodeados con schema `Z_NCR_CO` (ej. `"Z_NCR_CO"."Z_NCRCO.Pos_staging::POS_STAGING"`); cambiar `HANA_SCHEMA` en `.env` no tiene efecto.
 - La app consulta HANA/PG en vivo en cada arranque y rerun; no hay capa de mock/fixtures. El primer load del resumen tarda ~2 min (una query por tienda).
 - `get_resumen_tiendas()` clasifica estado: 0 diffs → `OK`, <50 → `ALERTA`, ≥50 → `CRITICO`.
+- **Los passwords de HANA vencen**: si el dashboard muestra `Error cargando ... (414) 'user is forced to change password: alter password required for user AMA5813'`, la contraseña de `HANA_USER` en `.env` venció. Hay que cambiarla (DBeaver/Studio o el admin de HANA) y actualizarla en `.env` del server + local + `systemctl restart monitor-post-hana`. Cuidado: hay varios sistemas HANA (`hl0-db` vs `hd0-db`); la app usa `hl0-db.cencosud.corp:30015`.
 - `.playwright-mcp/` (artefactos de pruebas de navegador) está gitignored — no commitear.
 - La carga de staging escribe `DELETE + INSERT` en `POS_STAGING` por tienda; correrla actualiza los datos del dashboard. Es la operación diaria de las 05:00.
