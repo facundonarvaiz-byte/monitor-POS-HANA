@@ -106,6 +106,33 @@ def listar_tiendas_postgres() -> list[str]:
     return store_manager.list_stores()
 
 
+def _deduplicar_ean(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Elimina duplicados de (TIENDA, EAN) antes del INSERT.
+
+    El PK de POS_STAGING es (TIENDA, EAN) y algunos POS tienen artículos
+    con EANs que colisionan tras quitar ceros a la izquierda (ej. E813:
+    '649106836009' basura y '00649106836009' válido). Se prioriza la fila
+    con SKU no vacío y distinto de '0', y luego la primera aparición.
+
+    Returns
+    -------
+    pd.DataFrame
+        df sin duplicados de (TIENDA, EAN).
+    """
+    df = df.copy()
+    df["_prioridad"] = df["sku"].astype(str).str.strip().isin(["", "0"]).astype(int)
+    df = df.sort_values(by="_prioridad", ascending=True)
+    n_antes = len(df)
+    df = df.drop_duplicates(subset=["tienda", "ean"], keep="first")
+    n_descartadas = n_antes - len(df)
+    if n_descartadas:
+        logger.warning(
+            "Dedupe (TIENDA,EAN): %d filas descartadas (PK violado)", n_descartadas
+        )
+    return df.drop(columns=["_prioridad"])
+
+
 def _insertar_lotes_staging(conn, df: pd.DataFrame) -> None:
     """
     Inserta df en POS_STAGING por lotes de 500 filas.
@@ -162,6 +189,7 @@ def populate_pos_staging(tienda: str) -> dict:
     try:
         engine_pg = store_manager.get_engine(tienda)
         df = pd.read_sql(text(query_pg), engine_pg, params={"tienda": tienda})
+        df = _deduplicar_ean(df)
         logger.info("populate_pos_staging: %d filas leídas de PostgreSQL tienda=%s", len(df), tienda)
     except Exception as e:
         fin = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -235,6 +263,7 @@ def actualizar_pos_staging_por_sku(tienda: str, sku: str) -> dict:
             engine_pg,
             params={"tienda": tienda, "sku": sku},
         )
+        df = _deduplicar_ean(df)
         logger.info("actualizar_pos_staging_por_sku: %d filas leídas de PostgreSQL tienda=%s sku=%s", len(df), tienda, sku)
     except Exception as e:
         fin = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
