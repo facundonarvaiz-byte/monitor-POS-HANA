@@ -16,22 +16,26 @@ VISTA_COMPARACION = '"_SYS_BIC"."Z_NCRCO.Pos_staging/POS_Comparacion"'
 # Tabla de log de staging
 _TABLA_POS_STAGING_LOG = '"Z_NCR_CO"."Z_NCRCO.Pos_staging::POS_STAGING_LOG"'
 
+# Tabla de logs CP_CVE
+_TABLA_CP_LOGS = '"Z_NCR_CO"."Z_NCRCO.CP_CVE::CP_LOGS"'
+
 
 
 def es_subarticulo(df: pd.DataFrame) -> pd.Series:
     """
     True si la fila es un subarticulo EAN: sin restriccion de venta en POS
-    (restringido_pos NULL o vacio) y con match en POS (no es solo HANA).
+    (restringido_pos NULL o vacio) y con match en HANA (tiene EAN del lado HANA).
 
-    Estas filas se excluyen de la vista principal y de los counts de diferencias.
+    Las filas solo-POS (sin EAN de HANA) nunca son subarticulos: se clasifican
+    como SOLO_POS. Estas filas se muestran en la vista aparte de subarticulos.
     """
-    if "restringido_pos" not in df.columns or "not_exist_pos" not in df.columns:
+    if "restringido_pos" not in df.columns or "ean" not in df.columns:
         return pd.Series(False, index=df.index)
     sin_restriccion = df["restringido_pos"].isna() | (
         df["restringido_pos"].astype(str).str.strip() == ""
     )
-    existe_en_pos = ~df["not_exist_pos"].fillna(0).astype(bool)
-    return sin_restriccion & existe_en_pos
+    existe_en_hana = df["ean"].notna()
+    return sin_restriccion & existe_en_hana
 
 
 def _sql_resumen_tienda(tienda: str) -> str:
@@ -40,7 +44,11 @@ def _sql_resumen_tienda(tienda: str) -> str:
 
     Devuelve una sola fila con los conteos de diferencias calculados en
     HANA (evita traer el detalle completo de la tienda a memoria).
-    Replica el filtro de subarticulos EAN de es_subarticulo().
+
+    Los conteos son de SKUs distintos, no de filas: un SKU puede tener
+    varios EAN en el POS y la vista repite una fila por cada uno.
+    La existencia en el POS se detecta por "EAN_POS" (columna real del
+    staging), no por "NOT_EXIST_POS" (que da True si falta la descripcion).
     """
     if not re.match(r'^[A-Za-z0-9]+$', tienda):
         raise ValueError(f"Código de tienda inválido: {tienda!r}")
@@ -49,29 +57,33 @@ def _sql_resumen_tienda(tienda: str) -> str:
         f"SELECT * FROM {VISTA_COMPARACION}('PLACEHOLDER' = "
         f"('$$WERKS_RUN$$', '{tienda}'))"
     )
-    rest = 't."POS_RESTRINGIDO_VENTA"'
-    notx = 't."NOT_EXIST_POS"'
+    sku = 'COALESCE(t."Sku", t."Sku_POS")'
     return (
         f"SELECT '{tienda}' AS tienda, "
-        f"COALESCE(SUM(COALESCE(CAST(t.\"DIFF_PRECIO\" AS INTEGER), 0)), 0) AS cant_diffs_precio, "
-        f"COALESCE(SUM(COALESCE(CAST(t.\"NOT_EXIST_POS\" AS INTEGER), 0)), 0) AS cant_solo_hana, "
-        f"COALESCE(SUM(COALESCE(CAST(t.\"DIFF_RESTRINGIDO\" AS INTEGER), 0)), 0) AS cant_diffs_restringido, "
+        f"COUNT(DISTINCT CASE WHEN CAST(t.\"DIFF_PRECIO\" AS INTEGER) = 1 "
+        f"THEN {sku} END) AS cant_diffs_precio, "
+        f"COUNT(DISTINCT CASE WHEN t.\"EAN_POS\" IS NULL AND t.\"EAN\" IS NOT NULL "
+        f"THEN {sku} END) AS cant_solo_hana, "
+        f"COUNT(DISTINCT CASE WHEN CAST(t.\"DIFF_RESTRINGIDO\" AS INTEGER) = 1 "
+        f"THEN {sku} END) AS cant_diffs_restringido, "
+        f"COUNT(DISTINCT CASE WHEN t.\"EAN\" IS NULL AND t.\"EAN_POS\" IS NOT NULL "
+        f"THEN {sku} END) AS cant_solo_post, "
         f"MAX(t.\"POS_FECHA_CARGA\") AS ultima_carga_pos "
-        f"FROM ({inner}) t "
-        f"WHERE NOT (({rest} IS NULL OR TRIM({rest}) = '') "
-        f"AND COALESCE({notx}, FALSE) = FALSE)"
+        f"FROM ({inner}) t"
     )
 
 
 def _completar_resumen(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Agrega columnas derivadas (cant_solo_post, total_diffs, estado),
-    normaliza ultima_carga_pos a texto y ordena por total_diffs.
+    Agrega columnas derivadas (total_diffs, estado), normaliza
+    ultima_carga_pos a texto y ordena por total_diffs.
+
+    El estado se calcula solo con precio, restringido y solo-HANA:
+    solo-POS es informativo y no altera el semaforo.
     """
     if df.empty:
         return df
 
-    df["cant_solo_post"] = 0
     df["total_diffs"] = (
         df["cant_diffs_precio"] + df["cant_solo_hana"] + df["cant_diffs_restringido"]
     ).astype(int)
@@ -101,6 +113,7 @@ def _resumen_secuencial(tiendas: list[str]) -> pd.DataFrame:
                 "cant_diffs_precio":      int(r["cant_diffs_precio"]),
                 "cant_solo_hana":         int(r["cant_solo_hana"]),
                 "cant_diffs_restringido": int(r["cant_diffs_restringido"]),
+                "cant_solo_post":         int(r["cant_solo_post"]),
                 "ultima_carga_pos":       r["ultima_carga_pos"],
             })
         except Exception as e:
@@ -111,6 +124,7 @@ def _resumen_secuencial(tiendas: list[str]) -> pd.DataFrame:
                 "cant_diffs_precio":      0,
                 "cant_solo_hana":         0,
                 "cant_diffs_restringido": 0,
+                "cant_solo_post":         0,
                 "ultima_carga_pos":       "",
             })
 
@@ -151,7 +165,9 @@ def get_detalle_tienda(tienda: str) -> pd.DataFrame:
     Columnas: tienda, sku, ean, descripcion_hana, descripcion_pos,
     precio_hana, precio_pos, restringido_pos, fecha_ult_mov, jobidn,
     origen_precio, precio_ant, fecha_carga_pos, diff_precio, not_exist_pos,
-    tipo_diferencia (derivado: PRECIO | SOLO_HANA | OK).
+    tipo_diferencia (derivado: PRECIO | RESTRINGIDO | SOLO_HANA | SOLO_POS | OK).
+
+    El sku se coalesce con Sku_POS: las filas solo-POS no tienen Sku de HANA.
     """
     if not re.match(r'^[A-Za-z0-9]+$', tienda):
         raise ValueError(f"Código de tienda inválido: {tienda!r}")
@@ -159,7 +175,7 @@ def get_detalle_tienda(tienda: str) -> pd.DataFrame:
     query = f"""
     SELECT
         "Tienda"                AS tienda,
-        "Sku"                   AS sku,
+        COALESCE("Sku", "Sku_POS") AS sku,
         "EAN"                   AS ean,
         "Descripcion"           AS descripcion_hana,
         "POS_DESCRIPCION"       AS descripcion_pos,
@@ -184,8 +200,18 @@ def get_detalle_tienda(tienda: str) -> pd.DataFrame:
     df = pd.read_sql(text(query), db.hana)
 
     if not df.empty:
+        for col in ("diff_precio", "diff_restringido"):
+            df[col] = df[col].fillna(False).astype(bool)
+
+        # Existencia real en el POS: la columna EAN_POS viene del staging.
+        # "NOT_EXIST_POS" de la vista da True si falta la descripcion, no si
+        # falta el articulo; se recalcula para no marcar falsos SOLO_HANA.
+        df["not_exist_pos"] = df["ean_pos"].isna()
+
         def _tipo(row) -> str:
-            if row["not_exist_pos"]:
+            if pd.isna(row["ean"]) and pd.notna(row["ean_pos"]):
+                return "SOLO_POS"
+            if pd.isna(row["ean_pos"]):
                 return "SOLO_HANA"
             if row["diff_precio"]:
                 return "PRECIO"
@@ -221,5 +247,26 @@ def get_logs_staging(limite: int = 200) -> pd.DataFrame:
     LIMIT {int(limite)}
     """
     logger.info("Ejecutando query HANA (log staging), limite=%s...", limite)
+    return pd.read_sql(text(query), db.hana)
+
+
+def get_cp_logs(limite: int = 200) -> pd.DataFrame:
+    """
+    Últimos registros de CP_LOGS ordenados por TS descendente
+    (los más recientes primero).
+
+    Columnas: job_id, ts, level, message.
+    """
+    query = f"""
+    SELECT
+        "JOB_ID"  AS job_id,
+        "TS"      AS ts,
+        "LEVEL"   AS level,
+        "MESSAGE" AS message
+    FROM {_TABLA_CP_LOGS}
+    ORDER BY "TS" DESC
+    LIMIT {int(limite)}
+    """
+    logger.info("Ejecutando query HANA (logs CP_CVE), limite=%s...", limite)
     return pd.read_sql(text(query), db.hana)
 

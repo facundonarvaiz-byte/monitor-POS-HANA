@@ -15,6 +15,7 @@ from hana_queries import (
     get_resumen_tiendas,
     get_detalle_tienda,
     get_logs_staging,
+    get_cp_logs,
     es_subarticulo,
 )
 from post_queries import (
@@ -45,7 +46,9 @@ defaults = {
     "df_resumen": None,
     "df_detalle": None,
     "df_logs": None,
+    "df_cp_logs": None,
     "ver_logs": False,
+    "ver_cp_logs": False,
     "ver_subarticulos": False,
     "autenticado": False,
     "rol": None,
@@ -133,6 +136,7 @@ def _cargar_detalle(tienda: str):
             st.session_state.pagina_detalle = 1  # resetear paginación
             st.session_state.ver_subarticulos = False
             st.session_state.ver_logs = False
+            st.session_state.ver_cp_logs = False
         except Exception as ex:
             st.error(f"Error cargando detalle de {tienda}: {ex}")
             logger.exception("Error en get_detalle_tienda")
@@ -145,6 +149,15 @@ def _cargar_logs():
         except Exception as ex:
             st.error(f"Error cargando logs: {ex}")
             logger.exception("Error en get_logs_staging")
+
+
+def _cargar_cp_logs():
+    with st.spinner("Cargando logs CP_CVE..."):
+        try:
+            st.session_state.df_cp_logs = get_cp_logs()
+        except Exception as ex:
+            st.error(f"Error cargando logs CP_CVE: {ex}")
+            logger.exception("Error en get_cp_logs")
 
 
 # ============================================================
@@ -176,6 +189,14 @@ if st.session_state.ver_logs:
         st.session_state.df_logs = None
         st.rerun()
     st.sidebar.markdown("---")
+elif st.session_state.ver_cp_logs:
+    if st.sidebar.button("← Volver al resumen", use_container_width=True):
+        st.session_state.ver_cp_logs = False
+        st.session_state.tienda_seleccionada = None
+        st.session_state.df_detalle = None
+        st.session_state.df_cp_logs = None
+        st.rerun()
+    st.sidebar.markdown("---")
 elif st.session_state.tienda_seleccionada:
     if st.sidebar.button("← Volver al resumen", use_container_width=True):
         st.session_state.tienda_seleccionada = None
@@ -202,6 +223,7 @@ else:
     st.sidebar.caption("🔒 Solo lectura — la carga de staging la ejecuta un gestor.")
 
 btn_logs = st.sidebar.button("📜 Ver logs de staging", use_container_width=True)
+btn_cp_logs = st.sidebar.button("🧾 Ver logs CP_CVE", use_container_width=True)
 
 
 # ============================================================
@@ -211,6 +233,8 @@ btn_logs = st.sidebar.button("📜 Ver logs de staging", use_container_width=Tru
 if btn_actualizar:
     if st.session_state.ver_logs:
         _cargar_logs()
+    elif st.session_state.ver_cp_logs:
+        _cargar_cp_logs()
     elif st.session_state.tienda_seleccionada:
         _cargar_detalle(st.session_state.tienda_seleccionada)
     else:
@@ -218,7 +242,13 @@ if btn_actualizar:
 
 if btn_logs:
     st.session_state.ver_logs = True
+    st.session_state.ver_cp_logs = False
     _cargar_logs()
+
+if btn_cp_logs:
+    st.session_state.ver_cp_logs = True
+    st.session_state.ver_logs = False
+    _cargar_cp_logs()
 
 if btn_staging:
     if st.session_state.tienda_seleccionada:
@@ -260,9 +290,58 @@ if btn_staging:
 # CUERPO PRINCIPAL
 # ============================================================
 
+# -- VISTA LOGS CP_CVE ---------------------------------------
+
+if st.session_state.ver_cp_logs:
+    if st.session_state.df_cp_logs is None:
+        _cargar_cp_logs()
+
+    df_cp_logs = st.session_state.df_cp_logs
+
+    st.subheader("🧾 Logs CP_CVE")
+
+    if df_cp_logs is None or df_cp_logs.empty:
+        st.info("No hay registros en el log CP_CVE.")
+    else:
+        cols_metricas = st.columns(3)
+        with cols_metricas[0]:
+            st.metric("Registros mostrados", len(df_cp_logs))
+        niveles = df_cp_logs["level"].value_counts()
+        for i, (nivel, conteo) in enumerate(niveles.head(2).items(), start=1):
+            with cols_metricas[i]:
+                st.metric(f"Level {nivel}", int(conteo))
+
+        st.markdown("---")
+
+        col_info, col_dl = st.columns([4, 1])
+        with col_info:
+            st.caption("Últimas 200 líneas — las más recientes primero. Usá el 🔍 de la grilla para filtrar.")
+        with col_dl:
+            csv_cp_logs = df_cp_logs.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "📥 Exportar CSV",
+                data=csv_cp_logs,
+                file_name="logs_cp_cve.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+
+        st.dataframe(
+            df_cp_logs.rename(columns={
+                "job_id": "Job ID",
+                "ts":     "TS",
+                "level":  "Level",
+                "message": "Mensaje",
+            }),
+            use_container_width=True,
+            hide_index=True,
+            height=620,
+        )
+
+
 # -- VISTA LOGS DE STAGING -----------------------------------
 
-if st.session_state.ver_logs:
+elif st.session_state.ver_logs:
     if st.session_state.df_logs is None:
         _cargar_logs()
 
@@ -337,16 +416,16 @@ elif st.session_state.tienda_seleccionada and st.session_state.df_detalle is not
         st.success("✅ No hay diferencias para esta tienda.")
     else:
         col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Total productos", f"{len(df_principales):,}")
-        if "tipo_diferencia" in df_principales.columns:
-            tipos = df_principales["tipo_diferencia"]
+        if {"sku", "diff_precio", "diff_restringido", "ean", "ean_pos"} <= set(df_det.columns):
+            skus = df_det["sku"]
+            with col1:
+                st.metric("Diffs precio 💰", int(skus[df_det["diff_precio"]].nunique()))
             with col2:
-                st.metric("Diffs precio 💰", int((tipos == "PRECIO").sum()))
+                st.metric("Diffs restringido 🚫", int(skus[df_det["diff_restringido"]].nunique()))
             with col3:
-                st.metric("Diffs restringido 🚫", int((tipos == "RESTRINGIDO").sum()))
+                st.metric("Solo en HANA", int(skus[df_det["ean_pos"].isna()].nunique()))
             with col4:
-                st.metric("Solo en HANA", int((tipos == "SOLO_HANA").sum()))
+                st.metric("Solo en POS", int(skus[df_det["ean"].isna()].nunique()))
 
         st.markdown("---")
 
@@ -534,19 +613,19 @@ elif st.session_state.df_resumen is not None:
     for _, row in df_res.iterrows():
         tienda_cod = row.get("tienda", "-")
         estado     = row.get("estado", "")
-        total      = int(row.get("total_diffs", 0))
         diffs_prec  = int(row.get("cant_diffs_precio", 0))
         diffs_restr = int(row.get("cant_diffs_restringido", 0))
         solo_hana   = int(row.get("cant_solo_hana", 0))
+        solo_post   = int(row.get("cant_solo_post", 0))
 
         col_info, col_btn = st.columns([5, 1])
         with col_info:
             st.markdown(
                 f"{_semaforo(estado)} **{tienda_cod}** &nbsp;|&nbsp; "
-                f"Total: **{total:,}** &nbsp;|&nbsp; "
                 f"Precio: {diffs_prec:,} &nbsp;|&nbsp; "
                 f"Restringido: {diffs_restr:,} &nbsp;|&nbsp; "
-                f"Solo HANA: {solo_hana:,}"
+                f"Solo HANA: {solo_hana:,} &nbsp;|&nbsp; "
+                f"Solo POS: {solo_post:,}"
             )
         with col_btn:
             if st.button("Ver detalle →", key=f"det_{tienda_cod}", use_container_width=True):
