@@ -1,6 +1,6 @@
-# 🔍 Monitor POST vs HANA
+# 🔍 Monitor POS vs HANA — Materiales activos
 
-Dashboard Streamlit para monitorear diferencias de materiales entre **SAP HANA**
+Dashboard Streamlit para monitorear diferencias de materiales activos entre **SAP HANA**
 (fuente de verdad) y el **sistema POS** (PostgreSQL por tienda).
 
 ## Stack
@@ -17,7 +17,7 @@ Dashboard Streamlit para monitorear diferencias de materiales entre **SAP HANA**
 ```
 PostgreSQL (tienda)  ──► populate_pos_staging() ──► HANA POS_STAGING
                                                            │
-HANA (imagen post) ─────────────────────────────► POS_Comparacion (Calculation View)
+HANA (imagen POS) ─────────────────────────────► POS_Comparacion (Calculation View)
                                                            │
                                                     Streamlit Dashboard
 ```
@@ -146,7 +146,7 @@ server y `systemctl restart monitor-post-hana`.
 monitor-post-hana/
 ├── AGENTS.md                  # Guía de operación para agentes (despliegue, server)
 ├── docs/
-│   ├── mapping.md             # Mapeo de campos HANA ↔ POST (stale, ver AGENTS.md)
+│   ├── mapping.md             # Mapeo de campos HANA ↔ POS (stale, ver AGENTS.md)
 │   ├── spec_hana_views.md     # Especificación de vistas HANA (stale)
 │   └── spec_xsjs.md           # Especificación del staging
 ├── pos_staging/

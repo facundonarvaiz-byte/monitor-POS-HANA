@@ -1,5 +1,5 @@
 """
-Monitor POST vs HANA — Dashboard de Comparacion.
+Monitor POS vs HANA — Dashboard de Comparacion de materiales activos.
 Ejecutar con: streamlit run src/app.py
 """
 
@@ -16,7 +16,6 @@ from hana_queries import (
     get_detalle_tienda,
     get_logs_staging,
     get_cp_logs,
-    es_subarticulo,
 )
 from post_queries import (
     populate_pos_staging,
@@ -30,7 +29,7 @@ from post_queries import (
 # ============================================================
 
 st.set_page_config(
-    page_title="Monitor POST vs HANA",
+    page_title="Monitor POS vs HANA — Materiales activos",
     page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -49,7 +48,6 @@ defaults = {
     "df_cp_logs": None,
     "ver_logs": False,
     "ver_cp_logs": False,
-    "ver_subarticulos": False,
     "autenticado": False,
     "rol": None,
 }
@@ -76,8 +74,8 @@ def _autenticar(usuario: str, clave: str) -> bool:
 def _login_ui():
     st.markdown(
         "<div style='text-align:center; margin-top:8vh'>"
-        "<h2>🔍 Monitor POST vs HANA</h2>"
-        "<p style='color:#888'>Ingresá para continuar</p>"
+        "<h2>🔍 Monitor POS vs HANA</h2>"
+        "<p style='color:#888'>Materiales activos — Ingresá para continuar</p>"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -119,9 +117,11 @@ def _resumen_cacheados() -> pd.DataFrame:
     return get_resumen_tiendas()
 
 
-def _cargar_resumen():
+def _cargar_resumen(forzar: bool = False):
     with st.spinner("Cargando resumen de tiendas..."):
         try:
+            if forzar:
+                _resumen_cacheados.clear()
             st.session_state.df_resumen = _resumen_cacheados()
         except Exception as ex:
             st.error(f"Error cargando resumen: {ex}")
@@ -134,7 +134,6 @@ def _cargar_detalle(tienda: str):
             st.session_state.df_detalle = get_detalle_tienda(tienda)
             st.session_state.tienda_seleccionada = tienda
             st.session_state.pagina_detalle = 1  # resetear paginación
-            st.session_state.ver_subarticulos = False
             st.session_state.ver_logs = False
             st.session_state.ver_cp_logs = False
         except Exception as ex:
@@ -172,8 +171,8 @@ if st.session_state.df_resumen is None:
 # SIDEBAR
 # ============================================================
 
-st.sidebar.title("🔍 Monitor POST vs HANA")
-st.sidebar.caption("v2.0")
+st.sidebar.title("🔍 Monitor POS vs HANA")
+st.sidebar.caption("Materiales activos · v2.0")
 st.sidebar.caption(f"👤 Sesión: **{st.session_state.rol}**")
 if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
     st.session_state.autenticado = False
@@ -238,7 +237,7 @@ if btn_actualizar:
     elif st.session_state.tienda_seleccionada:
         _cargar_detalle(st.session_state.tienda_seleccionada)
     else:
-        _cargar_resumen()
+        _cargar_resumen(forzar=True)
 
 if btn_logs:
     st.session_state.ver_logs = True
@@ -405,17 +404,12 @@ elif st.session_state.tienda_seleccionada and st.session_state.df_detalle is not
     tienda = st.session_state.tienda_seleccionada
     df_det = st.session_state.df_detalle
 
-    # Subarticulos EAN (restringido_pos NULL que existen en POS) van a una vista aparte
-    es_sub = es_subarticulo(df_det)
-    df_principales = df_det[~es_sub]
-    df_subarticulos = df_det[es_sub]
-
-    st.subheader(f"📋 Tienda **{tienda}** — Detalle de diferencias")
+    st.subheader(f"📋 Tienda **{tienda}** — Diferencias de materiales activos")
 
     if df_det.empty:
         st.success("✅ No hay diferencias para esta tienda.")
     else:
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3 = st.columns(3)
         if {"sku", "diff_precio", "diff_restringido", "ean", "ean_pos"} <= set(df_det.columns):
             skus = df_det["sku"]
             with col1:
@@ -424,8 +418,6 @@ elif st.session_state.tienda_seleccionada and st.session_state.df_detalle is not
                 st.metric("Diffs restringido 🚫", int(skus[df_det["diff_restringido"]].nunique()))
             with col3:
                 st.metric("Solo en HANA", int(skus[df_det["ean_pos"].isna()].nunique()))
-            with col4:
-                st.metric("Solo en POS", int(skus[df_det["ean"].isna()].nunique()))
 
         st.markdown("---")
 
@@ -456,13 +448,13 @@ elif st.session_state.tienda_seleccionada and st.session_state.df_detalle is not
         col_filtro, col_info, col_dl = st.columns([4, 3, 1])
 
         with col_filtro:
-            if "tipo_diferencia" in df_principales.columns:
-                tipos_disp = sorted(df_principales["tipo_diferencia"].dropna().unique())
+            if "tipo_diferencia" in df_det.columns:
+                tipos_disp = sorted(df_det["tipo_diferencia"].dropna().unique())
                 default_sel = ["PRECIO"] if "PRECIO" in tipos_disp else tipos_disp
                 tipos_sel = st.multiselect("Tipo de diferencia", tipos_disp, default=default_sel)
-                df_vista = df_principales[df_principales["tipo_diferencia"].isin(tipos_sel)]
+                df_vista = df_det[df_det["tipo_diferencia"].isin(tipos_sel)]
             else:
-                df_vista = df_principales
+                df_vista = df_det
 
         csv = df_vista.to_csv(index=False).encode("utf-8")
 
@@ -489,8 +481,8 @@ elif st.session_state.tienda_seleccionada and st.session_state.df_detalle is not
         st.markdown("---")
 
         if st.session_state.rol == "gestor":
-            corregibles = df_principales[
-                df_principales["tipo_diferencia"].isin(["PRECIO", "RESTRINGIDO"])
+            corregibles = df_det[
+                df_det["tipo_diferencia"].isin(["PRECIO", "RESTRINGIDO"])
             ]
             with st.expander("⬆️ Actualizar un producto (por SKU)", expanded=False):
                 if corregibles.empty:
@@ -532,51 +524,13 @@ elif st.session_state.tienda_seleccionada and st.session_state.df_detalle is not
         else:
             st.caption("🔒 La actualización por producto la ejecuta un gestor.")
 
-        # ── Subarticulos EANS ─────────────────────────────────
-        st.markdown("---")
-
-        if df_subarticulos.empty:
-            st.caption("🔗 No hay subarticulos EANS (restringido POS NULL) para esta tienda.")
-        else:
-            lbl_sub = (
-                "✖ Ocultar subarticulos EANS"
-                if st.session_state.ver_subarticulos
-                else f"🔗 Vista con todos los subarticulos EANS ({len(df_subarticulos):,})"
-            )
-            if st.button(lbl_sub, use_container_width=True):
-                st.session_state.ver_subarticulos = not st.session_state.ver_subarticulos
-                st.rerun()
-
-            if st.session_state.ver_subarticulos:
-                st.subheader("🧩 Subarticulos EANS (restringido POS NULL)")
-                col_sub_info, col_sub_dl = st.columns([4, 1])
-                with col_sub_info:
-                    st.caption(
-                        f"{len(df_subarticulos):,} filas — usá el 🔍 de la grilla para buscar y las cabeceras para ordenar"
-                    )
-                with col_sub_dl:
-                    csv_sub = df_subarticulos.to_csv(index=False).encode("utf-8")
-                    st.download_button(
-                        "📥 Exportar CSV",
-                        data=csv_sub,
-                        file_name=f"subarticulos_{tienda}.csv",
-                        mime="text/csv",
-                        use_container_width=True,
-                    )
-                st.dataframe(
-                    df_subarticulos.rename(columns=_col_labels),
-                    use_container_width=True,
-                    hide_index=True,
-                    height=620,
-                )
-
 
 # -- VISTA RESUMEN -------------------------------------------
 
 elif st.session_state.df_resumen is not None:
     df_res = st.session_state.df_resumen
 
-    st.subheader("📊 Resumen de diferencias por tienda")
+    st.subheader("📊 Resumen de materiales activos — diferencias por tienda")
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -586,7 +540,7 @@ elif st.session_state.df_resumen is not None:
         st.metric("Tiendas CRITICAS 🔴", criticas)
     with col3:
         total_diffs = int(df_res.get("total_diffs", pd.Series(dtype=int)).sum())
-        st.metric("Diferencias totales", f"{total_diffs:,}")
+        st.metric("Materiales con diferencias", f"{total_diffs:,}")
 
     st.markdown("---")
 
@@ -602,10 +556,10 @@ elif st.session_state.df_resumen is not None:
                 "CRITICO": "#ef4444",
                 "ERROR":   "#6b7280",
             },
-            title="Diferencias totales por tienda",
-            labels={"tienda": "Tienda", "total_diffs": "Total diferencias"},
+            title="Materiales con diferencias por tienda",
+            labels={"tienda": "Tienda", "total_diffs": "Materiales con diferencias"},
         )
-        fig.update_layout(xaxis_title="Tienda", yaxis_title="Diferencias")
+        fig.update_layout(xaxis_title="Tienda", yaxis_title="Materiales")
         st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("---")
@@ -616,7 +570,6 @@ elif st.session_state.df_resumen is not None:
         diffs_prec  = int(row.get("cant_diffs_precio", 0))
         diffs_restr = int(row.get("cant_diffs_restringido", 0))
         solo_hana   = int(row.get("cant_solo_hana", 0))
-        solo_post   = int(row.get("cant_solo_post", 0))
 
         col_info, col_btn = st.columns([5, 1])
         with col_info:
@@ -624,8 +577,7 @@ elif st.session_state.df_resumen is not None:
                 f"{_semaforo(estado)} **{tienda_cod}** &nbsp;|&nbsp; "
                 f"Precio: {diffs_prec:,} &nbsp;|&nbsp; "
                 f"Restringido: {diffs_restr:,} &nbsp;|&nbsp; "
-                f"Solo HANA: {solo_hana:,} &nbsp;|&nbsp; "
-                f"Solo POS: {solo_post:,}"
+                f"Solo HANA: {solo_hana:,}"
             )
         with col_btn:
             if st.button("Ver detalle →", key=f"det_{tienda_cod}", use_container_width=True):

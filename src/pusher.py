@@ -1,5 +1,5 @@
 """
-Módulo de corrección — Push de datos corregidos desde HANA hacia POST.
+Módulo de corrección — Push de datos corregidos desde HANA hacia POS.
 
 Soporta dos modos:
 1. UPDATE directo en PostgreSQL (modo por defecto)
@@ -183,7 +183,7 @@ class PushDirectoPostgres:
 @dataclass
 class PushAPI:
     """
-    Corrige datos llamando a una API REST del POST.
+    Corrige datos llamando a una API REST del POS.
     PENDIENTE: implementar cuando se conozca el endpoint.
     """
     
