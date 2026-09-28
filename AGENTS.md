@@ -25,7 +25,7 @@ No tests, linter, formatter, CI, or pyproject exist. `requirements.txt` is the o
 
 - Dashboard: `http://g100603aws079/monitor` — Apache (`/etc/apache2/conf.d/monitor.conf`) hace reverse proxy a Streamlit `127.0.0.1:8501` con `--server.baseUrlPath monitor`. La regla `ProxyPass /monitor/_stcore/stream ws://...` es obligatoria para los websockets.
 - Servicio systemd `monitor-post-hana` (User=root, Restart=always). ExecStart usa `/opt/pyapps/monitor-post-hana/venv/bin/streamlit run src/app.py --server.port 8501 --server.address 127.0.0.1 --server.headless true --server.baseUrlPath monitor`.
-- Carga diaria: `/etc/cron.d/monitor-post-hana` a las **05:00** → `venv/bin/python scripts/daily_staging.py` (root, log en `logs/daily_staging.log`). La corrida completa tarda ~6-8 min (E812 es la más lenta).
+- Carga diaria: `/etc/cron.d/monitor-post-hana` a las **08:10 hora local** (-03 = 11:10 UTC) → `venv/bin/python scripts/daily_staging.py` (root, log en `logs/daily_staging.log`). La corrida completa tarda ~18-20 min con 17 tiendas (E812 sola tarda ~7 min).
 - Secrets en `/opt/pyapps/monitor-post-hana/`: `.env` (HANA + GESTOR_PASS/REVISOR_PASS) y `stores.json`, ambos `root:root 600`, gitignored y **no viajan por git**: se suben a mano con pscp.
 - Login del dashboard: usuarios `gestor` / `revisor` con claves en `.env` del server (`.env` local usa valores de desarrollo `gestor01`/`revisor01`). `revisor` no ve el botón "Cargar Postgres".
 
@@ -70,4 +70,5 @@ Unidades/flask-proxy/tomcat, apache existente, crontab de root, `/srv/www/htdocs
 - `get_resumen_tiendas()` clasifica estado: ≤50 diffs → `OK`, ≤300 → `ALERTA`, >300 → `CRITICO`.
 - **Los passwords de HANA vencen**: si el dashboard muestra `Error cargando ... (414) 'user is forced to change password: alter password required for user AMA5813'`, la contraseña de `HANA_USER` en `.env` venció. Hay que cambiarla (DBeaver/Studio o el admin de HANA) y actualizarla en `.env` del server + local + `systemctl restart monitor-post-hana`. Cuidado: hay varios sistemas HANA (`hl0-db` vs `hd0-db`); la app usa `hl0-db.cencosud.corp:30015`.
 - `.playwright-mcp/` (artefactos de pruebas de navegador) está gitignored — no commitear.
-- La carga de staging escribe `DELETE + INSERT` en `POS_STAGING` por tienda; correrla actualiza los datos del dashboard. Es la operación diaria de las 05:00.
+- La carga de staging escribe `DELETE + INSERT` en `POS_STAGING` por tienda; correrla actualiza los datos del dashboard. Es la operación diaria de las 08:10 (hora local).
+- La VM del server (`g100603aws079`) se **enciende a las 08:00 y se apaga a las 19:01 hora local (-03)** todos los días (scheduler AWS). Las tareas cron solo pueden correr dentro de esa ventana: cualquier horario fuera de 08:00–19:01 (ej. 04:00 UTC = 01:00 local) nunca se ejecuta aunque el cron esté bien escrito.

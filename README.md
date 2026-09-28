@@ -112,7 +112,7 @@ Dentro de la app:
 - Dashboard en producción: `http://g100603aws079/monitor`
 - Servidor: Apache reverse proxy → Streamlit `127.0.0.1:8501` (websockets incluidos)
 - Servicio systemd: `monitor-post-hana` (log de deploy: `/var/log/monitor-post-hana-deploy.log`)
-- Carga diaria automática: cron a las **05:00** (`daily_staging.py`, log en `logs/daily_staging.log`)
+- Carga diaria automática: cron a las **08:10** hora local (11:10 UTC), apenas arranca la VM (`daily_staging.py`, log en `logs/daily_staging.log`)
 
 ### Cómo publicar un cambio
 
