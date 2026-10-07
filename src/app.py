@@ -16,6 +16,9 @@ from hana_queries import (
     get_detalle_tienda,
     get_logs_staging,
     get_cp_logs,
+    get_resumen_ean,
+    get_detalle_ean,
+    JOIN_TYPES_EAN,
 )
 from post_queries import (
     populate_pos_staging,
@@ -49,6 +52,11 @@ defaults = {
     "df_cp_logs": None,
     "ver_logs": False,
     "ver_cp_logs": False,
+    "ver_ean": False,
+    "df_resumen_ean": None,
+    "df_detalle_ean": None,
+    "ean_tienda": None,
+    "ean_join_type": "LO",
     "autenticado": False,
     "rol": None,
 }
@@ -110,6 +118,35 @@ def _semaforo(estado: str) -> str:
         "CRITICO": "🔴",
         "ERROR":   "⚫",
     }.get(estado, "⚪")
+
+
+# Máximo de filas que se muestran en la grilla de la vista por EAN;
+# el CSV exporta el total (MA/AA pueden superar las 200.000 filas).
+PREVIEW_EAN_FILAS = 20_000
+
+_EAN_COL_LABELS = {
+    "hana_tienda":      "Tienda HANA",
+    "pos_ean":          "EAN POS",
+    "pos_sku":          "SKU POS",
+    "pos_descripcion":  "Desc. POS",
+    "hana_ean":         "EAN HANA",
+    "hana_sku":         "SKU HANA",
+    "hana_ausente":     "Ausente HANA",
+    "pos_ausente":      "Ausente POS",
+    "match":            "Match",
+    "hana_precio":      "Precio HANA",
+    "pos_precio":       "Precio POS",
+    "pos_tienda":       "Tienda POS",
+    "hana_activo":      "Activo HANA",
+    "hana_umv":         "UMV",
+    "hana_ppal":        "EAN Principal",
+    "pos_activo":       "Activo POS",
+    "fecha_carga_pos":  "Últ. Carga POS",
+    "hana_descripcion": "Desc. HANA",
+    "show_ean":         "Mostrar EAN",
+    "tipo":             "Tipo",
+    "diff_precio":      "Diff. Precio",
+}
 
 
 _AMBIENTES_LABEL = {"Producción": "prod", "Test": "test"}
@@ -174,6 +211,40 @@ def _cargar_cp_logs(ambiente: str):
             logger.exception("Error en get_cp_logs")
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def _ean_resumen_cacheados(ambiente: str) -> pd.DataFrame:
+    """
+    Resumen por EAN compartido entre sesiones (TTL 5 min).
+    La caché está separada por ambiente (prod/test no se pisan).
+    """
+    return get_resumen_ean(ambiente)
+
+
+def _cargar_resumen_ean(ambiente: str, forzar: bool = False):
+    etiqueta = _etiqueta_ambiente(ambiente)
+    with st.spinner(f"Cargando resumen por EAN ({etiqueta})..."):
+        try:
+            if forzar:
+                _ean_resumen_cacheados.clear()
+            st.session_state.df_resumen_ean = _ean_resumen_cacheados(ambiente)
+        except Exception as ex:
+            st.error(f"Error cargando resumen por EAN ({etiqueta}): {ex}")
+            logger.exception("Error en get_resumen_ean")
+
+
+def _cargar_detalle_ean(tienda: str, join_type: str, ambiente: str):
+    etiqueta = _etiqueta_ambiente(ambiente)
+    modo = JOIN_TYPES_EAN.get(join_type, join_type)
+    with st.spinner(f"Cargando EANs de {tienda} — {modo} ({etiqueta})..."):
+        try:
+            st.session_state.df_detalle_ean = get_detalle_ean(tienda, join_type, ambiente)
+            st.session_state.ean_tienda = tienda
+            st.session_state.ean_join_type = join_type
+        except Exception as ex:
+            st.error(f"Error cargando EANs de {tienda} ({etiqueta}): {ex}")
+            logger.exception("Error en get_detalle_ean")
+
+
 def _resetear_vistas():
     """Limpia los datos cargados al cambiar de ambiente."""
     st.session_state.df_resumen = None
@@ -183,6 +254,11 @@ def _resetear_vistas():
     st.session_state.tienda_seleccionada = None
     st.session_state.ver_logs = False
     st.session_state.ver_cp_logs = False
+    st.session_state.ver_ean = False
+    st.session_state.df_resumen_ean = None
+    st.session_state.df_detalle_ean = None
+    st.session_state.ean_tienda = None
+    st.session_state.ean_join_type = "LO"
 
 
 # ============================================================
@@ -198,7 +274,7 @@ if st.session_state.df_resumen is None:
 # ============================================================
 
 st.sidebar.title("🔍 Monitor POS vs HANA")
-st.sidebar.caption("Materiales activos · v2.1")
+st.sidebar.caption("Materiales activos · v2.2")
 st.sidebar.caption(f"👤 Sesión: **{st.session_state.rol}**")
 
 # -- Switch de ambiente: Producción (default) / Test -----------------
@@ -241,6 +317,17 @@ elif st.session_state.ver_cp_logs:
         st.session_state.df_cp_logs = None
         st.rerun()
     st.sidebar.markdown("---")
+elif st.session_state.ver_ean:
+    if st.sidebar.button("← Volver al resumen", use_container_width=True):
+        if st.session_state.ean_tienda:
+            # Del detalle EAN → resumen EAN
+            st.session_state.ean_tienda = None
+            st.session_state.df_detalle_ean = None
+        else:
+            # Del resumen EAN → resumen principal
+            st.session_state.ver_ean = False
+        st.rerun()
+    st.sidebar.markdown("---")
 elif st.session_state.tienda_seleccionada:
     if st.sidebar.button("← Volver al resumen", use_container_width=True):
         st.session_state.tienda_seleccionada = None
@@ -248,11 +335,12 @@ elif st.session_state.tienda_seleccionada:
         st.rerun()
     st.sidebar.markdown("---")
 
-lbl_actualizar = (
-    f"🔄 Actualizar {st.session_state.tienda_seleccionada}"
-    if st.session_state.tienda_seleccionada
-    else "🔄 Actualizar datos"
-)
+if st.session_state.ver_ean and st.session_state.ean_tienda:
+    lbl_actualizar = f"🔄 Actualizar {st.session_state.ean_tienda}"
+elif st.session_state.tienda_seleccionada:
+    lbl_actualizar = f"🔄 Actualizar {st.session_state.tienda_seleccionada}"
+else:
+    lbl_actualizar = "🔄 Actualizar datos"
 btn_actualizar = st.sidebar.button(lbl_actualizar, use_container_width=True, type="primary")
 
 _sufijo_test = " TEST" if st.session_state.ambiente == "test" else ""
@@ -269,6 +357,7 @@ else:
 
 btn_logs = st.sidebar.button("📜 Ver logs de staging", use_container_width=True)
 btn_cp_logs = st.sidebar.button("🧾 Ver logs CP_CVE", use_container_width=True)
+btn_ean = st.sidebar.button("🔀 POS vs HANA x EAN", use_container_width=True)
 
 
 # ============================================================
@@ -283,6 +372,15 @@ if btn_actualizar:
         _cargar_logs(ambiente_actual)
     elif st.session_state.ver_cp_logs:
         _cargar_cp_logs(ambiente_actual)
+    elif st.session_state.ver_ean:
+        if st.session_state.ean_tienda:
+            _cargar_detalle_ean(
+                st.session_state.ean_tienda,
+                st.session_state.ean_join_type,
+                ambiente_actual,
+            )
+        else:
+            _cargar_resumen_ean(ambiente_actual, forzar=True)
     elif st.session_state.tienda_seleccionada:
         _cargar_detalle(st.session_state.tienda_seleccionada, ambiente_actual)
     else:
@@ -291,12 +389,25 @@ if btn_actualizar:
 if btn_logs:
     st.session_state.ver_logs = True
     st.session_state.ver_cp_logs = False
+    st.session_state.ver_ean = False
     _cargar_logs(ambiente_actual)
 
 if btn_cp_logs:
     st.session_state.ver_cp_logs = True
     st.session_state.ver_logs = False
+    st.session_state.ver_ean = False
     _cargar_cp_logs(ambiente_actual)
+
+if btn_ean:
+    st.session_state.ver_ean = True
+    st.session_state.ver_logs = False
+    st.session_state.ver_cp_logs = False
+    st.session_state.tienda_seleccionada = None
+    st.session_state.df_detalle = None
+    st.session_state.ean_tienda = None
+    st.session_state.df_detalle_ean = None
+    if st.session_state.df_resumen_ean is None:
+        _cargar_resumen_ean(ambiente_actual)
 
 if btn_staging:
     if st.session_state.tienda_seleccionada:
@@ -457,6 +568,176 @@ elif st.session_state.ver_logs:
             hide_index=True,
             height=620,
         )
+
+
+# -- VISTA POS vs HANA POR EAN --------------------------------
+
+elif st.session_state.ver_ean:
+    if st.session_state.df_resumen_ean is None and st.session_state.ean_tienda is None:
+        _cargar_resumen_ean(ambiente_actual)
+
+    df_res_ean = st.session_state.df_resumen_ean
+
+    # ── Detalle por tienda ─────────────────────────────────
+    if st.session_state.ean_tienda and st.session_state.df_detalle_ean is not None:
+        tienda_ean = st.session_state.ean_tienda
+        df_ean = st.session_state.df_detalle_ean
+
+        st.subheader(f"🔀 Tienda **{tienda_ean}** — POS vs HANA por EAN")
+
+        _opciones_ean = list(JOIN_TYPES_EAN.keys())
+        _idx_ean = (
+            _opciones_ean.index(st.session_state.ean_join_type)
+            if st.session_state.ean_join_type in _opciones_ean
+            else 0
+        )
+        jt_sel = st.radio(
+            "Modalidad",
+            _opciones_ean,
+            index=_idx_ean,
+            horizontal=True,
+            format_func=lambda k: f"{JOIN_TYPES_EAN[k]} ({k})",
+        )
+        if jt_sel != st.session_state.ean_join_type:
+            # Sin st.rerun(): si la vista HANA falla, se evita reintentar en loop.
+            _cargar_detalle_ean(tienda_ean, jt_sel, ambiente_actual)
+            df_ean = st.session_state.df_detalle_ean
+
+        if df_ean.empty:
+            st.success("✅ No hay filas para esta modalidad y tienda.")
+        else:
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Filas", f"{len(df_ean):,}")
+            with col2:
+                st.metric("Solo POS", f"{int((df_ean['tipo'] == 'SOLO_POS').sum()):,}")
+            with col3:
+                st.metric("Solo HANA", f"{int((df_ean['tipo'] == 'SOLO_HANA').sum()):,}")
+            with col4:
+                st.metric("Match", f"{int((df_ean['tipo'] == 'MATCH').sum()):,}")
+
+            st.markdown("---")
+
+            # ── Filtro tipo/precio + descarga ──────────────────
+            col_filtro, col_chk, col_info, col_dl = st.columns([3, 2, 3, 1])
+
+            with col_filtro:
+                tipos_disp = sorted(df_ean["tipo"].dropna().unique())
+                tipos_sel = st.multiselect("Tipo", tipos_disp, default=tipos_disp)
+                df_vista = df_ean[df_ean["tipo"].isin(tipos_sel)]
+
+            with col_chk:
+                if df_ean["diff_precio"].any():
+                    if st.checkbox("Solo diff. de precio"):
+                        df_vista = df_vista[df_vista["diff_precio"]]
+
+            csv_ean = df_vista.to_csv(index=False).encode("utf-8")
+
+            with col_info:
+                caption = f"{len(df_vista):,} filas"
+                if len(df_vista) > PREVIEW_EAN_FILAS:
+                    caption += (
+                        f" — se muestran las primeras {PREVIEW_EAN_FILAS:,} "
+                        f"en pantalla (el CSV incluye todas)"
+                    )
+                st.caption(caption + " — usá el 🔍 de la grilla para buscar y las cabeceras para ordenar")
+
+            with col_dl:
+                st.download_button(
+                    "📥 Exportar CSV",
+                    data=csv_ean,
+                    file_name=f"ean_{tienda_ean}_{st.session_state.ean_join_type}.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                )
+
+            st.dataframe(
+                df_vista.rename(columns=_EAN_COL_LABELS).head(PREVIEW_EAN_FILAS),
+                use_container_width=True,
+                hide_index=True,
+                height=620,
+            )
+
+    # ── Resumen por tienda ─────────────────────────────────
+    else:
+        st.subheader("🔀 POS vs HANA por EAN — resumen por tienda")
+
+        if df_res_ean is None or df_res_ean.empty:
+            st.info("No se pudo cargar el resumen por EAN. Usá **🔄 Actualizar datos** para reintentar.")
+        else:
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Tiendas monitoreadas", len(df_res_ean))
+            with col2:
+                st.metric("EANs solo POS", f"{int(df_res_ean['solo_pos'].sum()):,}")
+            with col3:
+                st.metric("EANs solo HANA", f"{int(df_res_ean['solo_hana'].sum()):,}")
+            with col4:
+                st.metric("EANs match", f"{int(df_res_ean['coincidencias'].sum()):,}")
+
+            errores_ean = (
+                int((df_res_ean["estado"] == "ERROR").sum())
+                if "estado" in df_res_ean.columns
+                else 0
+            )
+            if errores_ean:
+                st.warning(
+                    f"⚠️ {errores_ean} tienda(s) sin datos: la vista HANA por EAN "
+                    "se regenera por ventanas. Reintentá con **🔄 Actualizar datos**."
+                )
+
+            st.markdown("---")
+
+            df_plot = df_res_ean.melt(
+                id_vars="tienda",
+                value_vars=["solo_pos", "solo_hana", "coincidencias"],
+                var_name="grupo",
+                value_name="ean",
+            )
+            df_plot["grupo"] = df_plot["grupo"].map({
+                "solo_pos":      "Solo POS",
+                "solo_hana":     "Solo HANA",
+                "coincidencias": "Match",
+            })
+            fig_ean = px.bar(
+                df_plot,
+                x="tienda",
+                y="ean",
+                color="grupo",
+                barmode="group",
+                color_discrete_map={
+                    "Solo POS":  "#f59e0b",
+                    "Solo HANA": "#3b82f6",
+                    "Match":     "#10b981",
+                },
+                title="EANs por tienda",
+                labels={"tienda": "Tienda", "ean": "EANs", "grupo": ""},
+            )
+            fig_ean.update_layout(xaxis_title="Tienda", yaxis_title="EANs", legend_title="")
+            st.plotly_chart(fig_ean, use_container_width=True)
+
+            st.markdown("---")
+
+            for _, row in df_res_ean.iterrows():
+                tienda_cod = row.get("tienda", "-")
+                estado_ean = row.get("estado", "OK")
+
+                col_info, col_btn = st.columns([5, 1])
+                with col_info:
+                    st.markdown(
+                        f"{_semaforo(estado_ean)} **{tienda_cod}** &nbsp;|&nbsp; "
+                        f"Solo POS: {int(row.get('solo_pos', 0)):,} &nbsp;|&nbsp; "
+                        f"Solo HANA: {int(row.get('solo_hana', 0)):,} &nbsp;|&nbsp; "
+                        f"Match: {int(row.get('coincidencias', 0)):,}"
+                    )
+                with col_btn:
+                    if st.button(
+                        "Ver detalle →",
+                        key=f"ean_det_{tienda_cod}",
+                        use_container_width=True,
+                    ):
+                        _cargar_detalle_ean(tienda_cod, "LO", ambiente_actual)
+                        st.rerun()
 
 
 # -- VISTA DETALLE -------------------------------------------

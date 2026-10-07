@@ -4,6 +4,7 @@ Consultas a SAP HANA — Monitor POS vs HANA (materiales activos).
 from __future__ import annotations
 
 import re
+import time
 
 import pandas as pd
 from sqlalchemy import text
@@ -12,6 +13,20 @@ from config import db, logger, get_store_manager, validar_ambiente
 
 # Vista de comparacion HANA vs POS_STAGING (parametro $$WERKS_RUN$$)
 VISTA_COMPARACION = '"_SYS_BIC"."Z_NCRCO.Pos_staging/POS_Comparacion"'
+
+# Vista de comparacion POS vs HANA a nivel EAN (vista "_Ale"), por tienda.
+# Parametros: $$WERKS_RUN$$ (tienda) y $$JOIN_TYPE$$ (ver JOIN_TYPES_EAN).
+VISTA_EAN = '"_SYS_BIC"."Z_NCRCO.Pos_staging.POS_Vs_Hana/POS_vs_HANAxEAN_Ale"'
+
+# Modalidades del placeholder $$JOIN_TYPE$$ de VISTA_EAN.
+# La vista filtra su salida por SHOW_EAN segun esta modalidad.
+JOIN_TYPES_EAN = {
+    "LO": "Solo POS",
+    "RO": "Solo HANA",
+    "FO": "Solo POS + Solo HANA",
+    "MA": "Coincidencias",
+    "AA": "Todos",
+}
 
 # Tabla de log de staging
 _TABLA_POS_STAGING_LOG = '"Z_NCR_CO"."Z_NCRCO.Pos_staging::POS_STAGING_LOG"'
@@ -265,4 +280,240 @@ def get_cp_logs(ambiente: str, limite: int = 200) -> pd.DataFrame:
     """
     logger.info("Ejecutando query HANA [%s] (logs CP_CVE), limite=%s...", ambiente, limite)
     return pd.read_sql(text(query), db.get_hana(ambiente))
+
+
+# ============================================================
+# POS vs HANA por EAN (vista "_Ale")
+# ============================================================
+
+def _leer_vista_ean(
+    sql: str,
+    ambiente: str,
+    intentos: int = 3,
+    espera: float = 8.0,
+) -> pd.DataFrame:
+    """
+    Ejecuta una consulta contra VISTA_EAN con reintentos.
+
+    La vista "_Ale" se regenera en HANA por ventanas y durante ese proceso
+    responde 'invalid table name ... in schema _SYS_BIC' aunque la vista
+    exista. Se reintenta unas pocas veces antes de propagar el error.
+    """
+    ambiente = validar_ambiente(ambiente)
+    for intento in range(1, intentos + 1):
+        try:
+            return pd.read_sql(text(sql), db.get_hana(ambiente))
+        except Exception as e:
+            if intento >= intentos:
+                raise
+            logger.warning(
+                "Vista EAN [%s]: intento %d/%d falló (%s); reintento en %.0fs...",
+                ambiente,
+                intento,
+                intentos,
+                e,
+                espera,
+            )
+            time.sleep(espera)
+
+
+def _sql_resumen_ean_tienda(tienda: str) -> str:
+    """
+    SELECT agregado de VISTA_EAN para una tienda.
+
+    Una fila con los conteos de EAN de cada modalidad (subconsultas
+    escalares): solo_pos = LO (POS sin HANA), solo_hana = RO (HANA sin POS)
+    y coincidencias = MA.
+    """
+    if not re.match(r'^[A-Za-z0-9]+$', tienda):
+        raise ValueError(f"Código de tienda inválido: {tienda!r}")
+
+    def _conteo(join_type: str) -> str:
+        return (
+            f"(SELECT COUNT(*) FROM {VISTA_EAN}("
+            f"'PLACEHOLDER' = ('$$WERKS_RUN$$', '{tienda}'), "
+            f"'PLACEHOLDER' = ('$$JOIN_TYPE$$', '{join_type}')))"
+        )
+
+    return (
+        f"SELECT '{tienda}' AS \"tienda\", "
+        f"{_conteo('LO')} AS \"solo_pos\", "
+        f"{_conteo('RO')} AS \"solo_hana\", "
+        f"{_conteo('MA')} AS \"coincidencias\" "
+        f"FROM DUMMY"
+    )
+
+
+def _completar_resumen_ean(df: pd.DataFrame) -> pd.DataFrame:
+    """Normaliza tipos, agrega total y ordena por total descendente."""
+    if df.empty:
+        return df
+
+    for col in ("solo_pos", "solo_hana", "coincidencias"):
+        df[col] = df[col].astype(int)
+
+    df["total"] = df["solo_pos"] + df["solo_hana"] + df["coincidencias"]
+    if "estado" not in df.columns:
+        df["estado"] = "OK"
+
+    return df.sort_values("total", ascending=False).reset_index(drop=True)
+
+
+def _resumen_ean_secuencial(tiendas: list[str], ambiente: str) -> pd.DataFrame:
+    """Resumen por EAN con una query por tienda, aislando errores por tienda."""
+    filas = []
+    errores = set()
+    for t in tiendas:
+        try:
+            df = _leer_vista_ean(_sql_resumen_ean_tienda(t), ambiente)
+            r = df.iloc[0]
+            filas.append({
+                "tienda":        t,
+                "solo_pos":      int(r["solo_pos"]),
+                "solo_hana":     int(r["solo_hana"]),
+                "coincidencias": int(r["coincidencias"]),
+            })
+        except Exception as e:
+            logger.error("get_resumen_ean: error en tienda %s: %s", t, e)
+            errores.add(t)
+            filas.append({
+                "tienda":        t,
+                "solo_pos":      0,
+                "solo_hana":     0,
+                "coincidencias": 0,
+            })
+
+    df = _completar_resumen_ean(pd.DataFrame(filas))
+    df.loc[df["tienda"].isin(errores), "estado"] = "ERROR"
+    return df
+
+
+def get_resumen_ean(ambiente: str) -> pd.DataFrame:
+    """
+    Resumen por tienda de VISTA_EAN en el ambiente indicado.
+
+    Columnas: tienda, solo_pos, solo_hana, coincidencias, total, estado.
+    Intenta un solo UNION ALL (una fila por tienda); si falla, reintenta
+    tienda por tienda para reportar errores individuales.
+    """
+    ambiente = validar_ambiente(ambiente)
+    tiendas = get_store_manager(ambiente).list_stores()
+    if not tiendas:
+        logger.warning("get_resumen_ean [%s]: no hay tiendas configuradas.", ambiente)
+        return pd.DataFrame()
+
+    try:
+        query = " UNION ALL ".join(_sql_resumen_ean_tienda(t) for t in tiendas)
+        logger.info(
+            "Ejecutando query HANA [%s] (resumen por EAN), tiendas=%d...",
+            ambiente,
+            len(tiendas),
+        )
+        return _completar_resumen_ean(_leer_vista_ean(query, ambiente))
+    except Exception as e:
+        logger.error(
+            "get_resumen_ean [%s]: falló el resumen conjunto (%s); reintento por tienda.",
+            ambiente,
+            e,
+        )
+        return _resumen_ean_secuencial(tiendas, ambiente)
+
+
+def get_detalle_ean(tienda: str, join_type: str, ambiente: str) -> pd.DataFrame:
+    """
+    Detalle por EAN de una tienda y modalidad de VISTA_EAN.
+
+    join_type: LO (solo POS) | RO (solo HANA) | FO (ambos singles) |
+    MA (coincidencias) | AA (todos).
+
+    Columnas: hana_tienda, pos_ean, pos_sku, pos_descripcion, hana_ean,
+    hana_sku, hana_ausente, pos_ausente, match, hana_precio, pos_precio,
+    pos_tienda, hana_activo, hana_umv, hana_ppal, pos_activo,
+    fecha_carga_pos, hana_descripcion, show_ean, tipo (derivado:
+    SOLO_POS | SOLO_HANA | MATCH | SKU_DISTINTO) y diff_precio (derivado).
+
+    Nota: POS_ACTIVO (= RESTRINGIDO_VENTA del POS) viene NULL en el 100%
+    de las filas porque la vista excluye los articulos con EAN = SKU.
+    """
+    if not re.match(r'^[A-Za-z0-9]+$', tienda):
+        raise ValueError(f"Código de tienda inválido: {tienda!r}")
+    if join_type not in JOIN_TYPES_EAN:
+        raise ValueError(
+            f"JOIN_TYPE inválido: {join_type!r}. Válidos: {list(JOIN_TYPES_EAN)}"
+        )
+    ambiente = validar_ambiente(ambiente)
+
+    query = f"""
+    SELECT
+        "HANA_Tienda"      AS "hana_tienda",
+        "POS_EAN"          AS "pos_ean",
+        "POS_SKU"          AS "pos_sku",
+        "POS_DESCRIPCION"  AS "pos_descripcion",
+        "HANA_EAN"         AS "hana_ean",
+        "HANA_Sku"         AS "hana_sku",
+        "HANA_AUSENTE"     AS "hana_ausente",
+        "POS_AUSENTE"      AS "pos_ausente",
+        "MATCH"            AS "match",
+        "HANA_Precio"      AS "hana_precio",
+        "POS_PRECIO"       AS "pos_precio",
+        "POS_TIENDA"       AS "pos_tienda",
+        "HANA_Activo"      AS "hana_activo",
+        "HANA_UMV"         AS "hana_umv",
+        "HANA_PPAL"        AS "hana_ppal",
+        "POS_ACTIVO"       AS "pos_activo",
+        "FECHA_CARGA_POS"  AS "fecha_carga_pos",
+        "HANA_Descripcion" AS "hana_descripcion",
+        "SHOW_EAN"         AS "show_ean"
+    FROM {VISTA_EAN}('PLACEHOLDER' = ('$$WERKS_RUN$$', '{tienda}'),
+                     'PLACEHOLDER' = ('$$JOIN_TYPE$$', '{join_type}'))
+    ORDER BY "HANA_Sku", "POS_SKU"
+    """
+    logger.info(
+        "Ejecutando query HANA [%s] (detalle EAN) tienda=%s join_type=%s...",
+        ambiente,
+        tienda,
+        join_type,
+    )
+    df = _leer_vista_ean(query, ambiente)
+
+    if not df.empty:
+        for col in ("hana_ausente", "pos_ausente", "match"):
+            df[col] = df[col].fillna(False).astype(bool)
+
+        def _tipo(row) -> str:
+            if row["hana_ausente"]:
+                return "SOLO_POS"
+            if row["pos_ausente"]:
+                return "SOLO_HANA"
+            if row["match"]:
+                return "MATCH"
+            return "SKU_DISTINTO"
+
+        df["tipo"] = df.apply(_tipo, axis=1)
+
+        precios = df[["hana_precio", "pos_precio"]].apply(pd.to_numeric, errors="coerce")
+        df["diff_precio"] = (
+            precios["hana_precio"].notna()
+            & precios["pos_precio"].notna()
+            & (precios["hana_precio"] != precios["pos_precio"])
+        )
+
+        # Fecha homogénea para grilla/CSV (algunas filas del POS vienen nulas)
+        df["fecha_carga_pos"] = (
+            df["fecha_carga_pos"]
+            .astype(str)
+            .replace({"NaT": "", "None": "", "nan": ""})
+        )
+    else:
+        df["tipo"] = pd.Series(dtype=str)
+        df["diff_precio"] = pd.Series(dtype=bool)
+
+    logger.info(
+        "Detalle EAN [%s] tienda=%s join_type=%s: %d filas",
+        ambiente,
+        tienda,
+        join_type,
+        len(df),
+    )
+    return df
 
