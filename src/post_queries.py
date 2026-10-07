@@ -17,7 +17,7 @@ from datetime import datetime
 import pandas as pd
 from sqlalchemy import text
 
-from config import logger, store_manager, db as hana_db
+from config import logger, get_store_manager, validar_ambiente, db as hana_db
 
 # Tablas HANA
 _TABLA_POS_STAGING     = '"Z_NCR_CO"."Z_NCRCO.Pos_staging::POS_STAGING"'
@@ -59,6 +59,7 @@ INNER JOIN department d       ON a.department_number = d.department_number
 
 def _write_staging_log(
     tienda: str,
+    ambiente: str,
     inicio: str,
     fin: str,
     registros: int,
@@ -66,12 +67,13 @@ def _write_staging_log(
     mensaje: str = "",
 ) -> None:
     """
-    Escribe una fila en POS_STAGING_LOG.
+    Escribe una fila en POS_STAGING_LOG del ambiente indicado.
     El ID se calcula como MAX(ID)+1 (XS Classic no expone IDENTITY desde JDBC).
     Falla silenciosamente para no enmascarar el error principal.
     """
+    ambiente = validar_ambiente(ambiente)
     try:
-        with hana_db.hana.connect() as conn:
+        with hana_db.get_hana(ambiente).connect() as conn:
             id_row = conn.execute(
                 text(f'SELECT IFNULL(MAX("ID"), 0) + 1 FROM {_TABLA_POS_STAGING_LOG}')
             ).scalar()
@@ -92,18 +94,28 @@ def _write_staging_log(
                 },
             )
             conn.commit()
-        logger.info("Log escrito en POS_STAGING_LOG: tienda=%s estado=%s", tienda, estado)
+        logger.info(
+            "Log escrito en POS_STAGING_LOG [%s]: tienda=%s estado=%s",
+            ambiente,
+            tienda,
+            estado,
+        )
     except Exception as e:
-        logger.warning("No se pudo escribir en POS_STAGING_LOG (tienda=%s): %s", tienda, e)
+        logger.warning(
+            "No se pudo escribir en POS_STAGING_LOG [%s] (tienda=%s): %s",
+            ambiente,
+            tienda,
+            e,
+        )
 
 
 # ============================================================
 # QUERIES
 # ============================================================
 
-def listar_tiendas_postgres() -> list[str]:
-    """Lista las tiendas configuradas en stores.json."""
-    return store_manager.list_stores()
+def listar_tiendas_postgres(ambiente: str) -> list[str]:
+    """Lista las tiendas configuradas en el JSON del ambiente (stores*.json)."""
+    return get_store_manager(ambiente).list_stores()
 
 
 def _deduplicar_ean(df: pd.DataFrame) -> pd.DataFrame:
@@ -160,9 +172,10 @@ def _insertar_lotes_staging(conn, df: pd.DataFrame) -> None:
         conn.execute(insert_sql, rows)
 
 
-def populate_pos_staging(tienda: str) -> dict:
+def populate_pos_staging(tienda: str, ambiente: str) -> dict:
     """
-    Lee datos del PostgreSQL local de la tienda y los escribe en HANA POS_STAGING.
+    Lee datos del PostgreSQL local de la tienda y los escribe en HANA POS_STAGING
+    del ambiente indicado.
 
     Reemplaza el trigger XSJS que falla en XS Classic porque $.db no soporta
     conexiones externas a PostgreSQL.
@@ -170,13 +183,18 @@ def populate_pos_staging(tienda: str) -> dict:
     Parameters
     ----------
     tienda : str
-        Código de tienda (ej: 'E802'). Debe existir en stores.json.
+        Código de tienda (ej: 'E802'). Debe existir en stores*.json del ambiente.
+    ambiente : str
+        "prod" o "test". Define el HANA destino y el PostgreSQL origen.
+        Obligatorio: nunca se asume producción por defecto.
 
     Returns
     -------
     dict
-        {"tienda": str, "registros": int, "duracion_ms": int, "ok": bool, "error"?: str}
+        {"ambiente": str, "tienda": str, "registros": int, "duracion_ms": int,
+         "ok": bool, "error"?: str}
     """
+    ambiente = validar_ambiente(ambiente)
     start = time.time()
     inicio = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -187,20 +205,33 @@ def populate_pos_staging(tienda: str) -> dict:
     """
     
     try:
-        engine_pg = store_manager.get_engine(tienda)
+        engine_pg = get_store_manager(ambiente).get_engine(tienda)
         df = pd.read_sql(text(query_pg), engine_pg, params={"tienda": tienda})
         df = _deduplicar_ean(df)
-        logger.info("populate_pos_staging: %d filas leídas de PostgreSQL tienda=%s", len(df), tienda)
+        logger.info(
+            "populate_pos_staging [%s]: %d filas leídas de PostgreSQL tienda=%s",
+            ambiente,
+            len(df),
+            tienda,
+        )
     except Exception as e:
         fin = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         dur = int((time.time() - start) * 1000)
-        logger.error("populate_pos_staging: error leyendo PostgreSQL tienda=%s: %s", tienda, e)
-        _write_staging_log(tienda, inicio, fin, 0, "ERROR", f"Lectura PG: {e}")
-        return {"tienda": tienda, "registros": 0, "duracion_ms": dur, "ok": False, "error": str(e)}
+        logger.error(
+            "populate_pos_staging [%s]: error leyendo PostgreSQL tienda=%s: %s",
+            ambiente,
+            tienda,
+            e,
+        )
+        _write_staging_log(tienda, ambiente, inicio, fin, 0, "ERROR", f"Lectura PG: {e}")
+        return {
+            "ambiente": ambiente, "tienda": tienda, "registros": 0,
+            "duracion_ms": dur, "ok": False, "error": str(e),
+        }
 
     # ── 2. Escribir en HANA POS_STAGING ───────────────────────
     try:
-        with hana_db.hana.connect() as conn:
+        with hana_db.get_hana(ambiente).connect() as conn:
             # DELETE previo de esta tienda
             conn.execute(
                 text(f'DELETE FROM {_TABLA_POS_STAGING} WHERE "TIENDA" = :t'),
@@ -213,39 +244,62 @@ def populate_pos_staging(tienda: str) -> dict:
 
         fin = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         dur = int((time.time() - start) * 1000)
-        logger.info("populate_pos_staging: %d registros escritos en HANA tienda=%s (%dms)", len(df), tienda, dur)
-        _write_staging_log(tienda, inicio, fin, len(df), "OK")
-        return {"tienda": tienda, "registros": len(df), "duracion_ms": dur, "ok": True}
+        logger.info(
+            "populate_pos_staging [%s]: %d registros escritos en HANA tienda=%s (%dms)",
+            ambiente,
+            len(df),
+            tienda,
+            dur,
+        )
+        _write_staging_log(tienda, ambiente, inicio, fin, len(df), "OK")
+        return {
+            "ambiente": ambiente, "tienda": tienda, "registros": len(df),
+            "duracion_ms": dur, "ok": True,
+        }
 
     except Exception as e:
         fin = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         dur = int((time.time() - start) * 1000)
-        logger.error("populate_pos_staging: error escribiendo HANA tienda=%s: %s", tienda, e)
-        _write_staging_log(tienda, inicio, fin, 0, "ERROR", f"Escritura HANA: {e}")
-        return {"tienda": tienda, "registros": 0, "duracion_ms": dur, "ok": False, "error": str(e)}
+        logger.error(
+            "populate_pos_staging [%s]: error escribiendo HANA tienda=%s: %s",
+            ambiente,
+            tienda,
+            e,
+        )
+        _write_staging_log(tienda, ambiente, inicio, fin, 0, "ERROR", f"Escritura HANA: {e}")
+        return {
+            "ambiente": ambiente, "tienda": tienda, "registros": 0,
+            "duracion_ms": dur, "ok": False, "error": str(e),
+        }
 
 
-def actualizar_pos_staging_por_sku(tienda: str, sku: str) -> dict:
+def actualizar_pos_staging_por_sku(tienda: str, sku: str, ambiente: str) -> dict:
     """
     Actualiza el staging de un único producto (SKU) para una tienda.
 
     Lee del PostgreSQL de la tienda todos los registros con ese SKU
     (puede haber varios EAN del mismo SKU) y los reemplaza en HANA
-    POS_STAGING (DELETE por TIENDA+SKU + INSERT).
+    POS_STAGING del ambiente (DELETE por TIENDA+SKU + INSERT).
 
     Si el producto ya no existe en el POS de la tienda, elimina sus filas
     del staging (equivale a la baja que haría la carga completa).
 
+    Parameters
+    ----------
+    ambiente : str
+        "prod" o "test". Obligatorio: nunca se asume producción por defecto.
+
     Returns
     -------
     dict
-        {"tienda", "sku", "registros", "duracion_ms", "ok", "error"?}
+        {"ambiente", "tienda", "sku", "registros", "duracion_ms", "ok", "error"?}
     """
     sku = str(sku).strip()
     if not re.match(r'^[A-Za-z0-9]+$', tienda):
         raise ValueError(f"Código de tienda inválido: {tienda!r}")
     if not sku:
         raise ValueError("SKU vacío")
+    ambiente = validar_ambiente(ambiente)
 
     start = time.time()
     inicio = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -257,23 +311,38 @@ def actualizar_pos_staging_por_sku(tienda: str, sku: str) -> dict:
     """
 
     try:
-        engine_pg = store_manager.get_engine(tienda)
+        engine_pg = get_store_manager(ambiente).get_engine(tienda)
         df = pd.read_sql(
             text(query_pg),
             engine_pg,
             params={"tienda": tienda, "sku": sku},
         )
         df = _deduplicar_ean(df)
-        logger.info("actualizar_pos_staging_por_sku: %d filas leídas de PostgreSQL tienda=%s sku=%s", len(df), tienda, sku)
+        logger.info(
+            "actualizar_pos_staging_por_sku [%s]: %d filas leídas de PostgreSQL tienda=%s sku=%s",
+            ambiente,
+            len(df),
+            tienda,
+            sku,
+        )
     except Exception as e:
         fin = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         dur = int((time.time() - start) * 1000)
-        logger.error("actualizar_pos_staging_por_sku: error leyendo PostgreSQL tienda=%s sku=%s: %s", tienda, sku, e)
-        _write_staging_log(tienda, inicio, fin, 0, "ERROR", f"SKU {sku} — Lectura PG: {e}")
-        return {"tienda": tienda, "sku": sku, "registros": 0, "duracion_ms": dur, "ok": False, "error": str(e)}
+        logger.error(
+            "actualizar_pos_staging_por_sku [%s]: error leyendo PostgreSQL tienda=%s sku=%s: %s",
+            ambiente,
+            tienda,
+            sku,
+            e,
+        )
+        _write_staging_log(tienda, ambiente, inicio, fin, 0, "ERROR", f"SKU {sku} — Lectura PG: {e}")
+        return {
+            "ambiente": ambiente, "tienda": tienda, "sku": sku, "registros": 0,
+            "duracion_ms": dur, "ok": False, "error": str(e),
+        }
 
     try:
-        with hana_db.hana.connect() as conn:
+        with hana_db.get_hana(ambiente).connect() as conn:
             # DELETE de las filas de este SKU (y reemplazo total abajo)
             conn.execute(
                 text(f'DELETE FROM {_TABLA_POS_STAGING} WHERE "TIENDA" = :t AND "SKU" = :s'),
@@ -289,14 +358,33 @@ def actualizar_pos_staging_por_sku(tienda: str, sku: str) -> dict:
         mensaje = f"SKU {sku}"
         if df.empty:
             mensaje += " — no existe en POS, se eliminó del staging"
-        logger.info("actualizar_pos_staging_por_sku: %d registros en staging tienda=%s sku=%s (%dms)", len(df), tienda, sku, dur)
-        _write_staging_log(tienda, inicio, fin, len(df), "OK", mensaje)
-        return {"tienda": tienda, "sku": sku, "registros": len(df), "duracion_ms": dur, "ok": True}
+        logger.info(
+            "actualizar_pos_staging_por_sku [%s]: %d registros en staging tienda=%s sku=%s (%dms)",
+            ambiente,
+            len(df),
+            tienda,
+            sku,
+            dur,
+        )
+        _write_staging_log(tienda, ambiente, inicio, fin, len(df), "OK", mensaje)
+        return {
+            "ambiente": ambiente, "tienda": tienda, "sku": sku, "registros": len(df),
+            "duracion_ms": dur, "ok": True,
+        }
 
     except Exception as e:
         fin = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         dur = int((time.time() - start) * 1000)
-        logger.error("actualizar_pos_staging_por_sku: error escribiendo HANA tienda=%s sku=%s: %s", tienda, sku, e)
-        _write_staging_log(tienda, inicio, fin, 0, "ERROR", f"SKU {sku} — Escritura HANA: {e}")
-        return {"tienda": tienda, "sku": sku, "registros": 0, "duracion_ms": dur, "ok": False, "error": str(e)}
+        logger.error(
+            "actualizar_pos_staging_por_sku [%s]: error escribiendo HANA tienda=%s sku=%s: %s",
+            ambiente,
+            tienda,
+            sku,
+            e,
+        )
+        _write_staging_log(tienda, ambiente, inicio, fin, 0, "ERROR", f"SKU {sku} — Escritura HANA: {e}")
+        return {
+            "ambiente": ambiente, "tienda": tienda, "sku": sku, "registros": 0,
+            "duracion_ms": dur, "ok": False, "error": str(e),
+        }
 

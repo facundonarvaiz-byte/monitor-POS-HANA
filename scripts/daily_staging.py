@@ -19,20 +19,23 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from post_queries import populate_pos_staging, listar_tiendas_postgres
 from config import logger
 
+# La carga diaria (cron del server) es SIEMPRE producción.
+AMBIENTE = "prod"
+
 
 def main():
-    tiendas = listar_tiendas_postgres()
+    tiendas = listar_tiendas_postgres(AMBIENTE)
     if not tiendas:
         logger.warning("daily_staging: no hay tiendas configuradas en stores.json")
         return
 
-    logger.info("daily_staging: iniciando para %d tiendas: %s", len(tiendas), tiendas)
+    logger.info("daily_staging [%s]: iniciando para %d tiendas: %s", AMBIENTE, len(tiendas), tiendas)
 
     ok = 0
     errores = []
 
     for tienda in tiendas:
-        result = populate_pos_staging(tienda)
+        result = populate_pos_staging(tienda, AMBIENTE)
         if result["ok"]:
             ok += 1
             logger.info(

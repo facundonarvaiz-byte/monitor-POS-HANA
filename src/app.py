@@ -10,7 +10,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-from config import logger
+from config import logger, db
 from hana_queries import (
     get_resumen_tiendas,
     get_detalle_tienda,
@@ -41,6 +41,7 @@ st.set_page_config(
 # ============================================================
 
 defaults = {
+    "ambiente": "prod",
     "tienda_seleccionada": None,
     "df_resumen": None,
     "df_detalle": None,
@@ -111,52 +112,77 @@ def _semaforo(estado: str) -> str:
     }.get(estado, "⚪")
 
 
+_AMBIENTES_LABEL = {"Producción": "prod", "Test": "test"}
+
+
+def _etiqueta_ambiente(ambiente: str) -> str:
+    return "Test" if ambiente == "test" else "Producción"
+
+
 @st.cache_data(ttl=300, show_spinner=False)
-def _resumen_cacheados() -> pd.DataFrame:
-    """Resumen compartido entre sesiones (TTL 5 min) para no recalcularlo por usuario."""
-    return get_resumen_tiendas()
+def _resumen_cacheados(ambiente: str) -> pd.DataFrame:
+    """
+    Resumen compartido entre sesiones (TTL 5 min) para no recalcularlo por usuario.
+    La caché está separada por ambiente (prod/test no se pisan).
+    """
+    return get_resumen_tiendas(ambiente)
 
 
-def _cargar_resumen(forzar: bool = False):
-    with st.spinner("Cargando resumen de tiendas..."):
+def _cargar_resumen(ambiente: str, forzar: bool = False):
+    etiqueta = _etiqueta_ambiente(ambiente)
+    with st.spinner(f"Cargando resumen de tiendas ({etiqueta})..."):
         try:
             if forzar:
                 _resumen_cacheados.clear()
-            st.session_state.df_resumen = _resumen_cacheados()
+            st.session_state.df_resumen = _resumen_cacheados(ambiente)
         except Exception as ex:
-            st.error(f"Error cargando resumen: {ex}")
+            st.error(f"Error cargando resumen ({etiqueta}): {ex}")
             logger.exception("Error en get_resumen_tiendas")
 
 
-def _cargar_detalle(tienda: str):
-    with st.spinner(f"Cargando detalle de {tienda}..."):
+def _cargar_detalle(tienda: str, ambiente: str):
+    etiqueta = _etiqueta_ambiente(ambiente)
+    with st.spinner(f"Cargando detalle de {tienda} ({etiqueta})..."):
         try:
-            st.session_state.df_detalle = get_detalle_tienda(tienda)
+            st.session_state.df_detalle = get_detalle_tienda(tienda, ambiente)
             st.session_state.tienda_seleccionada = tienda
             st.session_state.pagina_detalle = 1  # resetear paginación
             st.session_state.ver_logs = False
             st.session_state.ver_cp_logs = False
         except Exception as ex:
-            st.error(f"Error cargando detalle de {tienda}: {ex}")
+            st.error(f"Error cargando detalle de {tienda} ({etiqueta}): {ex}")
             logger.exception("Error en get_detalle_tienda")
 
 
-def _cargar_logs():
-    with st.spinner("Cargando logs de staging..."):
+def _cargar_logs(ambiente: str):
+    etiqueta = _etiqueta_ambiente(ambiente)
+    with st.spinner(f"Cargando logs de staging ({etiqueta})..."):
         try:
-            st.session_state.df_logs = get_logs_staging()
+            st.session_state.df_logs = get_logs_staging(ambiente)
         except Exception as ex:
-            st.error(f"Error cargando logs: {ex}")
+            st.error(f"Error cargando logs ({etiqueta}): {ex}")
             logger.exception("Error en get_logs_staging")
 
 
-def _cargar_cp_logs():
-    with st.spinner("Cargando logs CP_CVE..."):
+def _cargar_cp_logs(ambiente: str):
+    etiqueta = _etiqueta_ambiente(ambiente)
+    with st.spinner(f"Cargando logs CP_CVE ({etiqueta})..."):
         try:
-            st.session_state.df_cp_logs = get_cp_logs()
+            st.session_state.df_cp_logs = get_cp_logs(ambiente)
         except Exception as ex:
-            st.error(f"Error cargando logs CP_CVE: {ex}")
+            st.error(f"Error cargando logs CP_CVE ({etiqueta}): {ex}")
             logger.exception("Error en get_cp_logs")
+
+
+def _resetear_vistas():
+    """Limpia los datos cargados al cambiar de ambiente."""
+    st.session_state.df_resumen = None
+    st.session_state.df_detalle = None
+    st.session_state.df_logs = None
+    st.session_state.df_cp_logs = None
+    st.session_state.tienda_seleccionada = None
+    st.session_state.ver_logs = False
+    st.session_state.ver_cp_logs = False
 
 
 # ============================================================
@@ -164,7 +190,7 @@ def _cargar_cp_logs():
 # ============================================================
 
 if st.session_state.df_resumen is None:
-    _cargar_resumen()
+    _cargar_resumen(st.session_state.ambiente)
 
 
 # ============================================================
@@ -172,8 +198,27 @@ if st.session_state.df_resumen is None:
 # ============================================================
 
 st.sidebar.title("🔍 Monitor POS vs HANA")
-st.sidebar.caption("Materiales activos · v2.0")
+st.sidebar.caption("Materiales activos · v2.1")
 st.sidebar.caption(f"👤 Sesión: **{st.session_state.rol}**")
+
+# -- Switch de ambiente: Producción (default) / Test -----------------
+_sel_ambiente = st.sidebar.radio(
+    "🌐 Ambiente",
+    list(_AMBIENTES_LABEL.keys()),
+    index=0,
+    horizontal=True,
+    key="selector_ambiente",
+)
+_ambiente_sel = _AMBIENTES_LABEL[_sel_ambiente]
+if _ambiente_sel != st.session_state.ambiente:
+    st.session_state.ambiente = _ambiente_sel
+    _resetear_vistas()
+    _cargar_resumen(_ambiente_sel, forzar=True)
+
+if st.session_state.ambiente == "test":
+    st.sidebar.warning("🧪 AMBIENTE TEST")
+st.sidebar.caption(f"🗄️ HANA: `{db.host(st.session_state.ambiente)}`")
+
 if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
     st.session_state.autenticado = False
     st.session_state.rol = None
@@ -210,10 +255,11 @@ lbl_actualizar = (
 )
 btn_actualizar = st.sidebar.button(lbl_actualizar, use_container_width=True, type="primary")
 
+_sufijo_test = " TEST" if st.session_state.ambiente == "test" else ""
 lbl_staging = (
-    f"⬆️ Cargar Postgres ({st.session_state.tienda_seleccionada})"
+    f"⬆️ Cargar Postgres ({st.session_state.tienda_seleccionada}){_sufijo_test}"
     if st.session_state.tienda_seleccionada
-    else "⬆️ Cargar Postgres (todas las tiendas)"
+    else f"⬆️ Cargar Postgres (todas las tiendas){_sufijo_test}"
 )
 btn_staging = None
 if st.session_state.rol == "gestor":
@@ -229,43 +275,46 @@ btn_cp_logs = st.sidebar.button("🧾 Ver logs CP_CVE", use_container_width=True
 # LOGICA DE BOTONES
 # ============================================================
 
+ambiente_actual = st.session_state.ambiente
+etiqueta_ambiente = _etiqueta_ambiente(ambiente_actual)
+
 if btn_actualizar:
     if st.session_state.ver_logs:
-        _cargar_logs()
+        _cargar_logs(ambiente_actual)
     elif st.session_state.ver_cp_logs:
-        _cargar_cp_logs()
+        _cargar_cp_logs(ambiente_actual)
     elif st.session_state.tienda_seleccionada:
-        _cargar_detalle(st.session_state.tienda_seleccionada)
+        _cargar_detalle(st.session_state.tienda_seleccionada, ambiente_actual)
     else:
-        _cargar_resumen(forzar=True)
+        _cargar_resumen(ambiente_actual, forzar=True)
 
 if btn_logs:
     st.session_state.ver_logs = True
     st.session_state.ver_cp_logs = False
-    _cargar_logs()
+    _cargar_logs(ambiente_actual)
 
 if btn_cp_logs:
     st.session_state.ver_cp_logs = True
     st.session_state.ver_logs = False
-    _cargar_cp_logs()
+    _cargar_cp_logs(ambiente_actual)
 
 if btn_staging:
     if st.session_state.tienda_seleccionada:
         tiendas_pg = [st.session_state.tienda_seleccionada]
     else:
-        tiendas_pg = listar_tiendas_postgres()
+        tiendas_pg = listar_tiendas_postgres(ambiente_actual)
 
     if not tiendas_pg:
-        st.sidebar.warning("⚠️ No hay tiendas configuradas en stores.json.")
+        st.sidebar.warning(f"⚠️ No hay tiendas configuradas para el ambiente {etiqueta_ambiente}.")
     else:
         resultados = []
-        barra = st.progress(0, text="Iniciando carga...")
+        barra = st.progress(0, text=f"Iniciando carga en {etiqueta_ambiente}...")
         for i, t in enumerate(tiendas_pg):
             barra.progress(
                 (i + 1) / len(tiendas_pg),
                 text=f"Cargando {t}... ({i + 1}/{len(tiendas_pg)})",
             )
-            resultados.append(populate_pos_staging(t))
+            resultados.append(populate_pos_staging(t, ambiente_actual))
         barra.empty()
 
         ok_count  = sum(1 for r in resultados if r["ok"])
@@ -273,13 +322,19 @@ if btn_staging:
         total_reg = sum(r["registros"] for r in resultados)
 
         if err_count == 0:
-            st.success(f"✅ {ok_count} tienda(s) cargadas — {total_reg:,} registros totales.")
+            st.success(
+                f"✅ {ok_count} tienda(s) cargadas en **{etiqueta_ambiente}** "
+                f"— {total_reg:,} registros totales."
+            )
         else:
-            st.warning(f"⚠️ {ok_count} OK, {err_count} con errores — {total_reg:,} registros cargados.")
+            st.warning(
+                f"⚠️ {etiqueta_ambiente}: {ok_count} OK, {err_count} con errores "
+                f"— {total_reg:,} registros cargados."
+            )
 
         with st.expander("Ver detalle del staging"):
             st.dataframe(
-                pd.DataFrame(resultados)[["tienda", "registros", "duracion_ms", "ok"]],
+                pd.DataFrame(resultados)[["ambiente", "tienda", "registros", "duracion_ms", "ok"]],
                 use_container_width=True,
                 hide_index=True,
             )
@@ -289,11 +344,17 @@ if btn_staging:
 # CUERPO PRINCIPAL
 # ============================================================
 
+if ambiente_actual == "test":
+    st.warning(
+        f"🧪 **AMBIENTE TEST** — HANA `{db.host('test')}` · tiendas de `stores-test.json`. "
+        "Las lecturas y cargas se hacen únicamente contra el ambiente de test."
+    )
+
 # -- VISTA LOGS CP_CVE ---------------------------------------
 
 if st.session_state.ver_cp_logs:
     if st.session_state.df_cp_logs is None:
-        _cargar_cp_logs()
+        _cargar_cp_logs(ambiente_actual)
 
     df_cp_logs = st.session_state.df_cp_logs
 
@@ -342,7 +403,7 @@ if st.session_state.ver_cp_logs:
 
 elif st.session_state.ver_logs:
     if st.session_state.df_logs is None:
-        _cargar_logs()
+        _cargar_logs(ambiente_actual)
 
     df_logs = st.session_state.df_logs
 
@@ -511,13 +572,14 @@ elif st.session_state.tienda_seleccionada and st.session_state.df_detalle is not
                         type="primary",
                         use_container_width=True,
                     ):
-                        with st.spinner(f"Actualizando SKU {sku_sel} desde el POS de {tienda}..."):
-                            res = actualizar_pos_staging_por_sku(tienda, sku_sel)
+                        with st.spinner(f"Actualizando SKU {sku_sel} desde el POS de {tienda} ({etiqueta_ambiente})..."):
+                            res = actualizar_pos_staging_por_sku(tienda, sku_sel, ambiente_actual)
                         if res["ok"]:
                             st.success(
-                                f"✅ SKU {sku_sel} actualizado — {res['registros']} registro(s) en staging."
+                                f"✅ SKU {sku_sel} actualizado en **{etiqueta_ambiente}** "
+                                f"— {res['registros']} registro(s) en staging."
                             )
-                            _cargar_detalle(tienda)
+                            _cargar_detalle(tienda, ambiente_actual)
                             st.rerun()
                         else:
                             st.error(f"❌ Error actualizando SKU {sku_sel}: {res.get('error')}")
@@ -581,7 +643,7 @@ elif st.session_state.df_resumen is not None:
             )
         with col_btn:
             if st.button("Ver detalle →", key=f"det_{tienda_cod}", use_container_width=True):
-                _cargar_detalle(tienda_cod)
+                _cargar_detalle(tienda_cod, ambiente_actual)
                 st.rerun()
 
 

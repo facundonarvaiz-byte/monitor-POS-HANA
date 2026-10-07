@@ -8,7 +8,7 @@ import re
 import pandas as pd
 from sqlalchemy import text
 
-from config import db, logger, store_manager
+from config import db, logger, get_store_manager, validar_ambiente
 
 # Vista de comparacion HANA vs POS_STAGING (parametro $$WERKS_RUN$$)
 VISTA_COMPARACION = '"_SYS_BIC"."Z_NCRCO.Pos_staging/POS_Comparacion"'
@@ -86,13 +86,13 @@ def _completar_resumen(df: pd.DataFrame) -> pd.DataFrame:
     return df.sort_values("total_diffs", ascending=False).reset_index(drop=True)
 
 
-def _resumen_secuencial(tiendas: list[str]) -> pd.DataFrame:
+def _resumen_secuencial(tiendas: list[str], ambiente: str) -> pd.DataFrame:
     """Resumen con una query agregada por tienda, aislando errores por tienda."""
     filas = []
     errores = set()
     for t in tiendas:
         try:
-            df = pd.read_sql(text(_sql_resumen_tienda(t)), db.hana)
+            df = pd.read_sql(text(_sql_resumen_tienda(t)), db.get_hana(ambiente))
             r = df.iloc[0]
             filas.append({
                 "tienda":                 t,
@@ -119,32 +119,39 @@ def _resumen_secuencial(tiendas: list[str]) -> pd.DataFrame:
     return df
 
 
-def get_resumen_tiendas() -> pd.DataFrame:
+def get_resumen_tiendas(ambiente: str) -> pd.DataFrame:
     """
-    Resumen de diferencias por tienda.
+    Resumen de diferencias por tienda en el ambiente indicado.
 
     Calcula los conteos en HANA con una sola query UNION ALL (una fila
     por tienda) en lugar de traer el detalle completo de cada tienda a
     memoria. Si la query conjunta falla, reintenta tienda por tienda
     para poder reportar errores individuales.
     """
-    tiendas = store_manager.list_stores()
+    ambiente = validar_ambiente(ambiente)
+    tiendas = get_store_manager(ambiente).list_stores()
     if not tiendas:
-        logger.warning("get_resumen_tiendas: no hay tiendas en stores.json.")
+        logger.warning("get_resumen_tiendas [%s]: no hay tiendas configuradas.", ambiente)
         return pd.DataFrame()
 
     try:
         query = " UNION ALL ".join(_sql_resumen_tienda(t) for t in tiendas)
-        logger.info("Ejecutando query HANA (resumen agregado), tiendas=%d...", len(tiendas))
-        return _completar_resumen(pd.read_sql(text(query), db.hana))
+        logger.info(
+            "Ejecutando query HANA [%s] (resumen agregado), tiendas=%d...",
+            ambiente,
+            len(tiendas),
+        )
+        return _completar_resumen(pd.read_sql(text(query), db.get_hana(ambiente)))
     except Exception as e:
         logger.error(
-            "get_resumen_tiendas: falló el resumen conjunto (%s); reintento por tienda.", e
+            "get_resumen_tiendas [%s]: falló el resumen conjunto (%s); reintento por tienda.",
+            ambiente,
+            e,
         )
-        return _resumen_secuencial(tiendas)
+        return _resumen_secuencial(tiendas, ambiente)
 
 
-def get_detalle_tienda(tienda: str) -> pd.DataFrame:
+def get_detalle_tienda(tienda: str, ambiente: str) -> pd.DataFrame:
     """
     Detalle de diferencias para una tienda desde VISTA_COMPARACION.
 
@@ -158,6 +165,7 @@ def get_detalle_tienda(tienda: str) -> pd.DataFrame:
     """
     if not re.match(r'^[A-Za-z0-9]+$', tienda):
         raise ValueError(f"Código de tienda inválido: {tienda!r}")
+    ambiente = validar_ambiente(ambiente)
 
     query = f"""
     SELECT
@@ -184,8 +192,8 @@ def get_detalle_tienda(tienda: str) -> pd.DataFrame:
     WHERE "EAN" IS NOT NULL
     ORDER BY "Sku"
     """
-    logger.info("Ejecutando query HANA (comparacion) tienda=%s...", tienda)
-    df = pd.read_sql(text(query), db.hana)
+    logger.info("Ejecutando query HANA [%s] (comparacion) tienda=%s...", ambiente, tienda)
+    df = pd.read_sql(text(query), db.get_hana(ambiente))
 
     if not df.empty:
         for col in ("diff_precio", "diff_restringido"):
@@ -208,17 +216,18 @@ def get_detalle_tienda(tienda: str) -> pd.DataFrame:
     else:
         df["tipo_diferencia"] = pd.Series(dtype=str)
 
-    logger.info("Diferencias para tienda %s: %d filas", tienda, len(df))
+    logger.info("Diferencias [%s] para tienda %s: %d filas", ambiente, tienda, len(df))
     return df
 
 
-def get_logs_staging(limite: int = 200) -> pd.DataFrame:
+def get_logs_staging(ambiente: str, limite: int = 200) -> pd.DataFrame:
     """
     Últimos registros de POS_STAGING_LOG ordenados por ID descendente
     (los más recientes primero).
 
     Columnas: id, tienda, inicio, fin, registros, estado, mensaje.
     """
+    ambiente = validar_ambiente(ambiente)
     query = f"""
     SELECT
         "ID"        AS id,
@@ -232,17 +241,18 @@ def get_logs_staging(limite: int = 200) -> pd.DataFrame:
     ORDER BY "ID" DESC
     LIMIT {int(limite)}
     """
-    logger.info("Ejecutando query HANA (log staging), limite=%s...", limite)
-    return pd.read_sql(text(query), db.hana)
+    logger.info("Ejecutando query HANA [%s] (log staging), limite=%s...", ambiente, limite)
+    return pd.read_sql(text(query), db.get_hana(ambiente))
 
 
-def get_cp_logs(limite: int = 200) -> pd.DataFrame:
+def get_cp_logs(ambiente: str, limite: int = 200) -> pd.DataFrame:
     """
     Últimos registros de CP_LOGS ordenados por TS descendente
     (los más recientes primero).
 
     Columnas: job_id, ts, level, message.
     """
+    ambiente = validar_ambiente(ambiente)
     query = f"""
     SELECT
         "JOB_ID"  AS job_id,
@@ -253,6 +263,6 @@ def get_cp_logs(limite: int = 200) -> pd.DataFrame:
     ORDER BY "TS" DESC
     LIMIT {int(limite)}
     """
-    logger.info("Ejecutando query HANA (logs CP_CVE), limite=%s...", limite)
-    return pd.read_sql(text(query), db.hana)
+    logger.info("Ejecutando query HANA [%s] (logs CP_CVE), limite=%s...", ambiente, limite)
+    return pd.read_sql(text(query), db.get_hana(ambiente))
 

@@ -26,7 +26,7 @@ No tests, linter, formatter, CI, or pyproject exist. `requirements.txt` is the o
 - Dashboard: `http://g100603aws079/monitor` — Apache (`/etc/apache2/conf.d/monitor.conf`) hace reverse proxy a Streamlit `127.0.0.1:8501` con `--server.baseUrlPath monitor`. La regla `ProxyPass /monitor/_stcore/stream ws://...` es obligatoria para los websockets.
 - Servicio systemd `monitor-post-hana` (User=root, Restart=always). ExecStart usa `/opt/pyapps/monitor-post-hana/venv/bin/streamlit run src/app.py --server.port 8501 --server.address 127.0.0.1 --server.headless true --server.baseUrlPath monitor`.
 - Carga diaria: `/etc/cron.d/monitor-post-hana` a las **08:10 hora local** (-03 = 11:10 UTC) → `venv/bin/python scripts/daily_staging.py` (root, log en `logs/daily_staging.log`). La corrida completa tarda ~18-20 min con 17 tiendas (E812 sola tarda ~7 min).
-- Secrets en `/opt/pyapps/monitor-post-hana/`: `.env` (HANA + GESTOR_PASS/REVISOR_PASS) y `stores.json`, ambos `root:root 600`, gitignored y **no viajan por git**: se suben a mano con pscp.
+- Secrets en `/opt/pyapps/monitor-post-hana/`: `.env` (HANA prod + `HANA_TEST_*` + GESTOR_PASS/REVISOR_PASS), `stores.json` (prod) y `stores-test.json` (test), todos `root:root 600`, gitignored y **no viajan por git**: se suben a mano con pscp. Para que el switch "Test" funcione en el server hay que subir el `.env` con `HANA_TEST_*` y `stores-test.json`, y `systemctl restart monitor-post-hana`.
 - Login del dashboard: usuarios `gestor` / `revisor` con claves en `.env` del server (`.env` local usa valores de desarrollo `gestor01`/`revisor01`). `revisor` no ve el botón "Cargar Postgres".
 
 ### SSH al server (patrones para agentes)
@@ -48,27 +48,28 @@ Unidades/flask-proxy/tomcat, apache existente, crontab de root, `/srv/www/htdocs
 
 ## Config
 
-- `.env` — HANA credentials + `GESTOR_PASS`/`REVISOR_PASS` (claves del dashboard). Loaded by `src/config.py` from the project root; no env vars needed to run scripts.
-- `stores.json` (root, gitignored) — per-store PostgreSQL connections keyed by store code (e.g. `E802`). Keys starting with `_` are treated as comments.
-- `.env.example` also has `POSTGRES_*` vars — these are **unused**; per-store PG creds come only from `stores.json`. `HANA_SCHEMA` is also unused: HANA object names are hardcoded.
+- `.env` — credenciales HANA prod (`HANA_*`) y test (`HANA_TEST_HOST/PORT/USER/PASSWORD`, default host `hd0-db.cencosud.corp:30015`) + `GESTOR_PASS`/`REVISOR_PASS` (claves del dashboard). Loaded by `src/config.py` from the project root; no env vars needed to run scripts.
+- `stores.json` (prod) y `stores-test.json` (test) (root, gitignored) — per-store PostgreSQL connections keyed by store code (e.g. `E802`). Keys starting with `_` are treated as comments.
+- `.env.example` also has `POSTGRES_*` vars — these are **unused**; per-store PG creds come only from `stores*.json`. `HANA_SCHEMA` is also unused: HANA object names are hardcoded (ambos HANA test/prod usan `Z_NCR_CO`).
 
 ## Architecture
 
-- `src/config.py` — global singletons `db` (HANA engine) and `store_manager` (per-store PG engines). Import these; don't create engines directly.
-- `src/hana_queries.py` — the comparison is done by the HANA Calculation View `"_SYS_BIC"."Z_NCRCO.Pos_staging/POS_Comparacion"`, called per store with `('PLACEHOLDER' = ('$$WERKS_RUN$$', '<store>'))`. `get_resumen_tiendas()` calls `get_detalle_tienda()` per store (N queries).
-- `src/post_queries.py` — `populate_pos_staging(tienda)`: reads PG tables `article`/`article_extended`/`department`, then DELETE-by-store + batched INSERT (500 rows) into `"Z_NCR_CO"."Z_NCRCO.Pos_staging::POS_STAGING"` (the HANA XSJS trigger equivalent). Logs each run to `POS_STAGING_LOG` with `ID = MAX(ID)+1` (XS Classic has no IDENTITY); log failures are non-fatal.
-- `src/app.py` — dashboard + login con roles. `gestor` (todas las acciones) / `revisor` (oculta el botón de staging). Claves leídas de `.env` via `_AUTH_ROLES = {"gestor": "GESTOR_PASS", "revisor": "REVISOR_PASS"}`.
+- `src/config.py` — ambientes `prod`/`test` (`validar_ambiente`). `db.get_hana(ambiente)` (engine HANA por ambiente) y `get_store_manager(ambiente)` (per-store PG engines: prod→`stores.json`, test→`stores-test.json`). Importar estos; no crear engines directamente. El ambiente es **explícito en cada llamada**, nunca estado global.
+- `src/hana_queries.py` — the comparison is done by the HANA Calculation View `"_SYS_BIC"."Z_NCRCO.Pos_staging/POS_Comparacion"`, called per store with `('PLACEHOLDER' = ('$$WERKS_RUN$$', '<store>'))`. `get_resumen_tiendas(ambiente)`, `get_detalle_tienda(tienda, ambiente)`, `get_logs_staging(ambiente)` y `get_cp_logs(ambiente)`.
+- `src/post_queries.py` — `populate_pos_staging(tienda, ambiente)`: reads PG tables `article`/`article_extended`/`department`, then DELETE-by-store + batched INSERT (500 rows) into `"Z_NCR_CO"."Z_NCRCO.Pos_staging::POS_STAGING"` (the HANA XSJS trigger equivalent). Logs each run to `POS_STAGING_LOG` with `ID = MAX(ID)+1` (XS Classic has no IDENTITY); log failures are non-fatal. `ambiente` es **obligatorio** y decide HANA destino + PG origen (así test nunca escribe prod).
+- `src/app.py` — dashboard + login con roles. `gestor` (todas las acciones) / `revisor` (oculta el botón de staging). Claves leídas de `.env` via `_AUTH_ROLES = {"gestor": "GESTOR_PASS", "revisor": "REVISOR_PASS"}`. Sidebar: switch `Producción`/`Test` (default Producción) que resetea las vistas y recarga el resumen del ambiente elegido; en Test se muestra banner y el label "Cargar Postgres ... TEST".
 - `pos_staging/*.hdbtable` — HANA table definitions; keep in sync with `post_queries.py` inserts.
 
 ## Gotchas
 
 - `docs/mapping.md` y `docs/spec_hana_views.md` son **stale**: describen un `comparator.py` / `get_imagen_post()` / `DIF_RESUMEN_TIENDAS` que ya no existe. El código ejecutable es `src/*`.
-- `src/pusher.py` es **WIP y no está conectado a `app.py`**: referencia `db.postgres` (no existe — solo `db.hana` + `store_manager`) y una tabla placeholder `public.tu_tabla_hash_plu`. No asumir que funciona.
+- `src/pusher.py` es **WIP y no está conectado a `app.py`**: referencia `db.postgres` (no existe — solo `db.get_hana(ambiente)` + `get_store_manager(ambiente)`) y una tabla placeholder `public.tu_tabla_hash_plu`. No asumir que funciona.
 - `get_detalle_tienda()` valida códigos de tienda con `^[A-Za-z0-9]+$` antes de interpolar en la vista HANA — mantener ese guard en cualquier query nueva que reciba un código de tienda.
 - Los identificadores HANA están hardcodeados con schema `Z_NCR_CO` (ej. `"Z_NCR_CO"."Z_NCRCO.Pos_staging::POS_STAGING"`); cambiar `HANA_SCHEMA` en `.env` no tiene efecto.
 - La app consulta HANA/PG en vivo en cada arranque y rerun; no hay capa de mock/fixtures. El primer load del resumen tarda ~2 min (una query por tienda).
 - `get_resumen_tiendas()` clasifica estado: ≤50 diffs → `OK`, ≤300 → `ALERTA`, >300 → `CRITICO`.
-- **Los passwords de HANA vencen**: si el dashboard muestra `Error cargando ... (414) 'user is forced to change password: alter password required for user AMA5813'`, la contraseña de `HANA_USER` en `.env` venció. Hay que cambiarla (DBeaver/Studio o el admin de HANA) y actualizarla en `.env` del server + local + `systemctl restart monitor-post-hana`. Cuidado: hay varios sistemas HANA (`hl0-db` vs `hd0-db`); la app usa `hl0-db.cencosud.corp:30015`.
+- **Los passwords de HANA vencen**: si el dashboard muestra `Error cargando ... (414) 'user is forced to change password: alter password required for user AMA5813'`, la contraseña de `HANA_USER` en `.env` venció. Hay que cambiarla (DBeaver/Studio o el admin de HANA) y actualizarla en `.env` del server + local + `systemctl restart monitor-post-hana`. Cuidado: hay varios sistemas HANA (`hl0-db` = prod con `HANA_*`, `hd0-db` = test con `HANA_TEST_*`); las credenciales de test son **independientes** de prod y se validan solo al usar el switch en Test (error `(10, 'authentication failed')` si no sirven).
+- En test, si `Z_NCR_WERKS_SEL` de `hd0-db` no se puede leer (o viene vacía), `list_stores()` cae al fallback de `stores-test.json` (E011/E018) con warning en el log.
 - `.playwright-mcp/` (artefactos de pruebas de navegador) está gitignored — no commitear.
 - La carga de staging escribe `DELETE + INSERT` en `POS_STAGING` por tienda; correrla actualiza los datos del dashboard. Es la operación diaria de las 08:10 (hora local).
 - La VM del server (`g100603aws079`) se **enciende a las 08:00 y se apaga a las 19:01 hora local (-03)** todos los días (scheduler AWS). Las tareas cron solo pueden correr dentro de esa ventana: cualquier horario fuera de 08:00–19:01 (ej. 04:00 UTC = 01:00 local) nunca se ejecuta aunque el cron esté bien escrito.
