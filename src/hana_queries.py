@@ -321,26 +321,20 @@ def _sql_resumen_ean_tienda(tienda: str) -> str:
     """
     SELECT agregado de VISTA_EAN para una tienda.
 
-    Una fila con los conteos de EAN de cada modalidad (subconsultas
-    escalares): solo_pos = LO (POS sin HANA), solo_hana = RO (HANA sin POS)
-    y coincidencias = MA.
+    Una fila con los conteos de EAN: solo_pos = POS sin HANA y
+    solo_hana = HANA sin POS. Se evalúa la vista una sola vez con
+    JOIN_TYPE=FO (solo POS + solo HANA) y se agrega por los flags.
     """
     if not re.match(r'^[A-Za-z0-9]+$', tienda):
         raise ValueError(f"Código de tienda inválido: {tienda!r}")
 
-    def _conteo(join_type: str) -> str:
-        return (
-            f"(SELECT COUNT(*) FROM {VISTA_EAN}("
-            f"'PLACEHOLDER' = ('$$WERKS_RUN$$', '{tienda}'), "
-            f"'PLACEHOLDER' = ('$$JOIN_TYPE$$', '{join_type}')))"
-        )
-
     return (
         f"SELECT '{tienda}' AS \"tienda\", "
-        f"{_conteo('LO')} AS \"solo_pos\", "
-        f"{_conteo('RO')} AS \"solo_hana\", "
-        f"{_conteo('MA')} AS \"coincidencias\" "
-        f"FROM DUMMY"
+        f"COALESCE(SUM(CASE WHEN \"HANA_AUSENTE\" = TRUE THEN 1 ELSE 0 END), 0) AS \"solo_pos\", "
+        f"COALESCE(SUM(CASE WHEN \"POS_AUSENTE\" = TRUE THEN 1 ELSE 0 END), 0) AS \"solo_hana\" "
+        f"FROM {VISTA_EAN}("
+        f"'PLACEHOLDER' = ('$$WERKS_RUN$$', '{tienda}'), "
+        f"'PLACEHOLDER' = ('$$JOIN_TYPE$$', 'FO'))"
     )
 
 
@@ -349,10 +343,10 @@ def _completar_resumen_ean(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
 
-    for col in ("solo_pos", "solo_hana", "coincidencias"):
+    for col in ("solo_pos", "solo_hana"):
         df[col] = df[col].astype(int)
 
-    df["total"] = df["solo_pos"] + df["solo_hana"] + df["coincidencias"]
+    df["total"] = df["solo_pos"] + df["solo_hana"]
     if "estado" not in df.columns:
         df["estado"] = "OK"
 
@@ -368,19 +362,17 @@ def _resumen_ean_secuencial(tiendas: list[str], ambiente: str) -> pd.DataFrame:
             df = _leer_vista_ean(_sql_resumen_ean_tienda(t), ambiente)
             r = df.iloc[0]
             filas.append({
-                "tienda":        t,
-                "solo_pos":      int(r["solo_pos"]),
-                "solo_hana":     int(r["solo_hana"]),
-                "coincidencias": int(r["coincidencias"]),
+                "tienda":    t,
+                "solo_pos":  int(r["solo_pos"]),
+                "solo_hana": int(r["solo_hana"]),
             })
         except Exception as e:
             logger.error("get_resumen_ean: error en tienda %s: %s", t, e)
             errores.add(t)
             filas.append({
-                "tienda":        t,
-                "solo_pos":      0,
-                "solo_hana":     0,
-                "coincidencias": 0,
+                "tienda":    t,
+                "solo_pos":  0,
+                "solo_hana": 0,
             })
 
     df = _completar_resumen_ean(pd.DataFrame(filas))
@@ -392,7 +384,7 @@ def get_resumen_ean(ambiente: str) -> pd.DataFrame:
     """
     Resumen por tienda de VISTA_EAN en el ambiente indicado.
 
-    Columnas: tienda, solo_pos, solo_hana, coincidencias, total, estado.
+    Columnas: tienda, solo_pos, solo_hana, total, estado.
     Intenta un solo UNION ALL (una fila por tienda); si falla, reintenta
     tienda por tienda para reportar errores individuales.
     """
