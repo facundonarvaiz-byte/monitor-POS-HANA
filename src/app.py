@@ -5,6 +5,7 @@ Ejecutar con: streamlit run src/app.py
 
 import math
 import os
+from datetime import datetime
 
 import streamlit as st
 import pandas as pd
@@ -18,6 +19,9 @@ from hana_queries import (
     get_cp_logs,
     get_resumen_ean,
     get_detalle_ean,
+    contar_materiales_push,
+    push_from_monitor,
+    estado_push,
 )
 from post_queries import (
     populate_pos_staging,
@@ -55,6 +59,7 @@ defaults = {
     "df_resumen_ean": None,
     "df_detalle_ean": None,
     "ean_tienda": None,
+    "push_estado": None,
     "autenticado": False,
     "rol": None,
 }
@@ -121,6 +126,9 @@ def _semaforo(estado: str) -> str:
 # Máximo de filas que se muestran en la grilla de la vista por EAN;
 # el CSV exporta el total (puede superar las 200.000 filas).
 PREVIEW_EAN_FILAS = 20_000
+
+# Umbral de referencia del gráfico de diferencias.
+_UMBRAL_DIFS = 300
 
 _EAN_COL_LABELS = {
     "hana_tienda":      "Tienda HANA",
@@ -232,9 +240,9 @@ def _cargar_resumen_ean(ambiente: str, forzar: bool = False):
 
 def _cargar_detalle_ean(tienda: str, ambiente: str):
     etiqueta = _etiqueta_ambiente(ambiente)
-    with st.spinner(f"Cargando diferencias EAN de {tienda} ({etiqueta})..."):
+    with st.spinner(f"Cargando EANs Solo POS de {tienda} ({etiqueta})..."):
         try:
-            st.session_state.df_detalle_ean = get_detalle_ean(tienda, "FO", ambiente)
+            st.session_state.df_detalle_ean = get_detalle_ean(tienda, "LO", ambiente)
             st.session_state.ean_tienda = tienda
         except Exception as ex:
             st.error(f"Error cargando EANs de {tienda} ({etiqueta}): {ex}")
@@ -254,6 +262,332 @@ def _resetear_vistas():
     st.session_state.df_resumen_ean = None
     st.session_state.df_detalle_ean = None
     st.session_state.ean_tienda = None
+
+
+# ============================================================
+# PUSH DE CAMBIOS AL POS
+# ============================================================
+
+_PUSH_ESPERA_MAX_MIN = 90
+
+
+def _push_elapsed_min(estado: dict) -> float:
+    inicio = estado.get("inicio")
+    if not inicio:
+        return 0.0
+    try:
+        delta = datetime.now() - datetime.fromisoformat(inicio)
+        return max(0.0, delta.total_seconds() / 60)
+    except Exception:
+        return 0.0
+
+
+def _push_activo() -> dict | None:
+    estado = st.session_state.get("push_estado")
+    if estado and estado.get("estado") in ("pendiente", "actualizando", "demorado"):
+        return estado
+    return None
+
+
+def _actualizar_post_push(estado: dict) -> bool:
+    """Recarga POS_STAGING desde PostgreSQL y refresca la vista actual."""
+    tienda = estado["tienda"]
+    ambiente = estado["ambiente"]
+    etiqueta = _etiqueta_ambiente(ambiente)
+    try:
+        with st.spinner(
+            f"POS procesó el push. Actualizando POS_STAGING de {tienda} "
+            f"desde PostgreSQL ({etiqueta})..."
+        ):
+            res = populate_pos_staging(tienda, ambiente)
+    except Exception as ex:
+        res = {"ok": False, "error": str(ex)}
+
+    if not res.get("ok"):
+        estado["estado"] = "error_staging"
+        estado["mensaje"] = (
+            f"El POS procesó el push, pero falló la actualización desde "
+            f"PostgreSQL: {res.get('error')}"
+        )
+        st.session_state.push_estado = estado
+        logger.error(
+            "Push [%s] tienda=%s: error actualizando staging: %s",
+            ambiente,
+            tienda,
+            res.get("error"),
+        )
+        return False
+
+    estado["staging_registros"] = int(res.get("registros", 0))
+    estado["demora_min"] = _push_elapsed_min(estado)
+    estado["estado"] = "completado"
+    estado["mensaje"] = ""
+    st.session_state.push_estado = estado
+
+    _resumen_cacheados.clear()
+    _ean_resumen_cacheados.clear()
+
+    if ambiente == st.session_state.ambiente:
+        if st.session_state.ver_ean and st.session_state.ean_tienda == tienda:
+            _cargar_detalle_ean(tienda, ambiente)
+        elif st.session_state.tienda_seleccionada == tienda:
+            _cargar_detalle(tienda, ambiente)
+        st.session_state.df_resumen = None
+        st.session_state.df_resumen_ean = None
+
+    logger.info(
+        "Push [%s] tienda=%s completado: staging=%d registros, demora=%.1f min",
+        ambiente,
+        tienda,
+        estado["staging_registros"],
+        estado["demora_min"],
+    )
+    return True
+
+
+def _iniciar_push(tienda: str, ambiente: str):
+    if _push_activo():
+        st.error("Ya hay un push en curso. Esperá a que termine antes de iniciar otro.")
+        return
+    inicio_dt = datetime.now()
+    estado_base = {
+        "tienda": tienda,
+        "ambiente": ambiente,
+        "inicio": inicio_dt.isoformat(timespec="seconds"),
+        "inicio_fecha": inicio_dt.strftime("%Y-%m-%d %H:%M:%S"),
+        "esperados": 0,
+        "encolados": 0,
+        "run_key": None,
+        "run_floor": None,
+        "sp_ms": None,
+        "ultimo_chequeo": None,
+        "pendientes": None,
+        "procesados": None,
+        "procesado_ts": None,
+        "demora_min": None,
+        "staging_registros": None,
+        "mensaje": "",
+    }
+
+    try:
+        with st.spinner(f"Consultando materiales a pushear de {tienda}..."):
+            esperados = contar_materiales_push(tienda, ambiente)
+    except Exception as ex:
+        estado_base["estado"] = "error"
+        estado_base["mensaje"] = f"No se pudo consultar materiales a pushear: {ex}"
+        st.session_state.push_estado = estado_base
+        logger.exception("Error contando materiales de push")
+        return
+
+    if esperados == 0:
+        estado_base["estado"] = "sin_materiales"
+        estado_base["mensaje"] = "No hay materiales activos para pushear."
+        st.session_state.push_estado = estado_base
+        return
+
+    with st.spinner(f"Enviando push de {tienda} al POS..."):
+        res = push_from_monitor(tienda, ambiente)
+
+    if not res.get("ok"):
+        estado_base["estado"] = "error"
+        estado_base["mensaje"] = f"Error ejecutando el push: {res.get('error')}"
+        st.session_state.push_estado = estado_base
+        return
+
+    estado_base.update({
+        "estado": "pendiente",
+        "esperados": esperados,
+        "encolados": int(res.get("encolados", 0)),
+        "run_key": res.get("run_key"),
+        "run_floor": res.get("run_floor"),
+        "sp_ms": res.get("sp_ms"),
+    })
+    st.session_state.push_estado = estado_base
+    logger.info(
+        "Push iniciado [%s] tienda=%s esperados=%d encolados=%d run=%s",
+        ambiente,
+        tienda,
+        esperados,
+        estado_base["encolados"],
+        estado_base["run_key"],
+    )
+
+
+def _chequear_push(estado: dict, manual: bool = False) -> bool:
+    """Consulta el estado del push y, si terminó, actualiza el staging."""
+    if estado.get("estado") not in ("pendiente", "demorado"):
+        return False
+
+    try:
+        res = estado_push(
+            estado["tienda"],
+            estado.get("run_key"),
+            estado.get("run_floor"),
+            estado["ambiente"],
+        )
+    except Exception as ex:
+        estado["ultimo_chequeo"] = datetime.now().strftime("%H:%M:%S")
+        estado["mensaje"] = f"Error consultando el estado del push: {ex}"
+        st.session_state.push_estado = estado
+        logger.exception("Error consultando estado_push")
+        return False
+
+    estado["ultimo_chequeo"] = datetime.now().strftime("%H:%M:%S")
+    estado["pendientes"] = res.get("pendientes")
+    estado["procesados"] = res.get("procesados")
+    estado["procesado_ts"] = res.get("procesado_ts")
+    estado["mensaje"] = ""
+
+    if res.get("completado"):
+        estado["estado"] = "actualizando"
+        st.session_state.push_estado = estado
+        return _actualizar_post_push(estado)
+
+    if _push_elapsed_min(estado) > _PUSH_ESPERA_MAX_MIN:
+        estado["estado"] = "demorado"
+        estado["mensaje"] = (
+            f"El POS todavía no confirmó el push después de "
+            f"{_PUSH_ESPERA_MAX_MIN} min."
+        )
+    st.session_state.push_estado = estado
+    return False
+
+
+def _dibujar_estado_push(estado: dict):
+    est = estado.get("estado")
+    tienda = estado.get("tienda", "-")
+    ambiente = _etiqueta_ambiente(estado.get("ambiente", "prod"))
+
+    if est == "sin_materiales":
+        st.info(f"No hay materiales activos para pushear en {tienda}.")
+        return
+
+    if est == "error":
+        st.error(f"Push {tienda}: {estado.get('mensaje', 'Error desconocido')}")
+        return
+
+    if est == "error_staging":
+        st.error(f"Push {tienda}: {estado.get('mensaje', 'Error desconocido')}")
+        if st.button(
+            "Reintentar actualización",
+            key=f"push_retry_stg_{tienda}",
+            use_container_width=True,
+        ):
+            if _actualizar_post_push(estado):
+                st.rerun(scope="app")
+        return
+
+    if est == "actualizando":
+        st.info(f"POS procesó el push de {tienda}. Actualizando staging...")
+        return
+
+    if est == "completado":
+        demora = estado.get("demora_min") or 0
+        registros = estado.get("staging_registros") or 0
+        st.success(f"Push {tienda} aplicado (demora {demora:.0f} min).")
+        st.caption(f"Ambiente: {ambiente}")
+        st.caption(
+            f"POS_STAGING actualizado desde PostgreSQL: {registros:,} registros."
+        )
+        return
+
+    st.markdown(f"**Push {tienda}**")
+    st.caption(f"Ambiente: {ambiente}")
+    st.caption(
+        f"Encolado: {estado.get('inicio_fecha', '-')} — "
+        f"{int(estado.get('esperados', 0)):,} materiales"
+    )
+    if est == "demorado":
+        st.warning(
+            f"Sigue pendiente después de {_push_elapsed_min(estado):.0f} min. "
+            "El POS puede demorar; podés verificar manualmente."
+        )
+    else:
+        st.caption("Esperando procesamiento del POS... (demora típica 30–50 min)")
+
+    if estado.get("ultimo_chequeo"):
+        st.caption(f"Último chequeo: {estado['ultimo_chequeo']}")
+    if estado.get("pendientes") is not None:
+        st.caption(
+            f"Pendientes: {int(estado.get('pendientes') or 0)} — "
+            f"procesados: {int(estado.get('procesados') or 0)}"
+        )
+    if estado.get("mensaje"):
+        st.warning(estado["mensaje"])
+
+    if st.button(
+        "Verificar ahora",
+        key=f"push_check_{tienda}",
+        use_container_width=True,
+    ):
+        _chequear_push(estado, manual=True)
+        st.rerun(scope="app")
+
+    if est == "demorado":
+        if st.button(
+            "Descartar estado",
+            key=f"push_discard_{tienda}",
+            use_container_width=True,
+        ):
+            st.session_state.push_estado = None
+            st.rerun(scope="app")
+
+
+@st.fragment(run_every=30)
+def _panel_push_poll():
+    estado = st.session_state.get("push_estado")
+    if not estado or estado.get("estado") not in ("pendiente", "actualizando"):
+        return
+
+    if estado.get("estado") == "pendiente":
+        _chequear_push(estado, manual=False)
+        estado = st.session_state.get("push_estado")
+
+    if not estado or estado.get("estado") not in ("pendiente", "actualizando"):
+        st.rerun(scope="app")
+
+    _dibujar_estado_push(estado)
+
+
+def _render_push_ui():
+    estado = st.session_state.get("push_estado")
+    if not estado:
+        return
+    with st.sidebar:
+        st.markdown("---")
+        if estado.get("estado") in ("pendiente", "actualizando"):
+            _panel_push_poll()
+        else:
+            _dibujar_estado_push(estado)
+
+
+@st.dialog("Confirmar push a POS")
+def _dialogo_confirmar_push(tienda: str, ambiente: str):
+    st.markdown(
+        f"Se enviarán al POS los cambios pendientes de la tienda **{tienda}**."
+    )
+    st.warning(
+        "El POS puede tardar entre 30 y 50 minutos en reflejar los cambios. "
+        "La app consultará el estado y actualizará los datos automáticamente."
+    )
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button(
+            "Confirmar push",
+            type="primary",
+            use_container_width=True,
+            key="push_confirm_ok",
+        ):
+            _iniciar_push(tienda, ambiente)
+            st.rerun()
+    with col2:
+        if st.button(
+            "Cancelar",
+            use_container_width=True,
+            key="push_confirm_cancel",
+        ):
+            st.rerun()
+
 
 
 # ============================================================
@@ -293,6 +627,7 @@ st.sidebar.caption(f"🗄️ HANA: `{db.host(st.session_state.ambiente)}`")
 if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
     st.session_state.autenticado = False
     st.session_state.rol = None
+    st.session_state.push_estado = None
     st.rerun()
 st.sidebar.markdown("---")
 
@@ -339,9 +674,14 @@ else:
 btn_actualizar = st.sidebar.button(lbl_actualizar, use_container_width=True, type="primary")
 
 _sufijo_test = " TEST" if st.session_state.ambiente == "test" else ""
+tienda_staging = (
+    st.session_state.ean_tienda
+    if st.session_state.ver_ean
+    else st.session_state.tienda_seleccionada
+)
 lbl_staging = (
-    f"⬆️ Cargar Postgres ({st.session_state.tienda_seleccionada}){_sufijo_test}"
-    if st.session_state.tienda_seleccionada
+    f"⬆️ Cargar Postgres ({tienda_staging}){_sufijo_test}"
+    if tienda_staging
     else f"⬆️ Cargar Postgres (todas las tiendas){_sufijo_test}"
 )
 btn_staging = None
@@ -350,9 +690,22 @@ if st.session_state.rol == "gestor":
 else:
     st.sidebar.caption("🔒 Solo lectura — la carga de staging la ejecuta un gestor.")
 
+btn_push = None
+_push_en_curso = _push_activo()
+if st.session_state.rol == "gestor" and tienda_staging:
+    btn_push = st.sidebar.button(
+        f"Push cambios ({tienda_staging})",
+        use_container_width=True,
+        disabled=_push_en_curso is not None,
+    )
+    if _push_en_curso and _push_en_curso.get("tienda") != tienda_staging:
+        st.sidebar.caption(f"Push en curso: {_push_en_curso['tienda']}")
+
 btn_logs = st.sidebar.button("📜 Ver logs de staging", use_container_width=True)
 btn_cp_logs = st.sidebar.button("🧾 Ver logs CP_CVE", use_container_width=True)
 btn_ean = st.sidebar.button("🔀 POS vs HANA x EAN", use_container_width=True)
+
+_render_push_ui()
 
 
 # ============================================================
@@ -361,6 +714,9 @@ btn_ean = st.sidebar.button("🔀 POS vs HANA x EAN", use_container_width=True)
 
 ambiente_actual = st.session_state.ambiente
 etiqueta_ambiente = _etiqueta_ambiente(ambiente_actual)
+
+if btn_push:
+    _dialogo_confirmar_push(tienda_staging, ambiente_actual)
 
 if btn_actualizar:
     if st.session_state.ver_logs:
@@ -401,8 +757,8 @@ if btn_ean:
         _cargar_resumen_ean(ambiente_actual)
 
 if btn_staging:
-    if st.session_state.tienda_seleccionada:
-        tiendas_pg = [st.session_state.tienda_seleccionada]
+    if tienda_staging:
+        tiendas_pg = [tienda_staging]
     else:
         tiendas_pg = listar_tiendas_postgres(ambiente_actual)
 
@@ -577,25 +933,22 @@ elif st.session_state.ver_ean:
         st.subheader(f"🔀 Tienda **{tienda_ean}** — POS vs HANA por EAN")
 
         if df_ean.empty:
-            st.success("✅ No hay diferencias para esta tienda.")
+            st.success("✅ No hay EANs Solo POS para esta tienda.")
         else:
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Filas", f"{len(df_ean):,}")
-            with col2:
-                st.metric("Solo POS", f"{int((df_ean['tipo'] == 'SOLO_POS').sum()):,}")
-            with col3:
-                st.metric("Solo HANA", f"{int((df_ean['tipo'] == 'SOLO_HANA').sum()):,}")
+            st.metric("EANs Solo POS", f"{len(df_ean):,}")
 
             st.markdown("---")
 
-            # ── Filtro tipo + descarga ─────────────────────────
-            col_filtro, col_info, col_dl = st.columns([3, 4, 1])
-
-            with col_filtro:
-                tipos_disp = sorted(df_ean["tipo"].dropna().unique())
-                tipos_sel = st.multiselect("Tipo", tipos_disp, default=tipos_disp)
-                df_vista = df_ean[df_ean["tipo"].isin(tipos_sel)]
+            # ── Filtro tipo (si aplica) + descarga ─────────────
+            tipos_disp = sorted(df_ean["tipo"].dropna().unique())
+            if len(tipos_disp) > 1:
+                col_filtro, col_info, col_dl = st.columns([3, 4, 1])
+                with col_filtro:
+                    tipos_sel = st.multiselect("Tipo", tipos_disp, default=tipos_disp)
+                    df_vista = df_ean[df_ean["tipo"].isin(tipos_sel)]
+            else:
+                col_info, col_dl = st.columns([7, 1])
+                df_vista = df_ean
 
             csv_ean = df_vista.to_csv(index=False).encode("utf-8")
 
@@ -642,30 +995,19 @@ elif st.session_state.ver_ean:
                     "se regenera por ventanas. Reintentá con **🔄 Actualizar datos**."
                 )
 
-            df_plot = df_res_ean.melt(
-                id_vars="tienda",
-                value_vars=["solo_pos", "solo_hana"],
-                var_name="grupo",
-                value_name="ean",
-            )
-            df_plot["grupo"] = df_plot["grupo"].map({
-                "solo_pos":  "Solo POS",
-                "solo_hana": "Solo HANA",
-            })
             fig_ean = px.bar(
-                df_plot,
+                df_res_ean.sort_values("solo_pos", ascending=False),
                 x="tienda",
-                y="ean",
-                color="grupo",
-                barmode="group",
-                color_discrete_map={
-                    "Solo POS":  "#f59e0b",
-                    "Solo HANA": "#3b82f6",
-                },
-                title="EANs por tienda",
-                labels={"tienda": "Tienda", "ean": "EANs", "grupo": ""},
+                y="solo_pos",
+                title="EANs Solo POS por tienda",
+                labels={"tienda": "Tienda", "solo_pos": "EANs Solo POS"},
+                color_discrete_sequence=["#f59e0b"],
             )
-            fig_ean.update_layout(xaxis_title="Tienda", yaxis_title="EANs", legend_title="")
+            fig_ean.update_layout(
+                xaxis_title="Tienda",
+                yaxis_title="EANs Solo POS",
+                showlegend=False,
+            )
             st.plotly_chart(fig_ean, use_container_width=True)
 
             st.markdown("---")
@@ -678,8 +1020,7 @@ elif st.session_state.ver_ean:
                 with col_info:
                     st.markdown(
                         f"{_semaforo(estado_ean)} **{tienda_cod}** &nbsp;|&nbsp; "
-                        f"Solo POS: {int(row.get('solo_pos', 0)):,} &nbsp;|&nbsp; "
-                        f"Solo HANA: {int(row.get('solo_hana', 0)):,}"
+                        f"Solo POS: {int(row.get('solo_pos', 0)):,}"
                     )
                 with col_btn:
                     if st.button(
@@ -826,12 +1167,21 @@ elif st.session_state.df_resumen is not None:
 
     st.subheader("📊 Resumen de materiales activos — diferencias por tienda")
 
-    if "total_diffs" in df_res.columns:
+    if not df_res.empty and "total_diffs" in df_res.columns:
+        df_plot = df_res.sort_values("total_diffs", ascending=False).copy()
+        max_diffs = int(df_plot["total_diffs"].max())
+        supera_umbral = max_diffs > _UMBRAL_DIFS
+        df_plot["etiqueta"] = df_plot["total_diffs"].apply(
+            lambda v: "" if v == 0 else f"{int(v):,}"
+        )
+
         fig = px.bar(
-            df_res.sort_values("total_diffs", ascending=False),
+            df_plot,
             x="tienda",
             y="total_diffs",
             color="estado",
+            custom_data=["total_diffs"],
+            text="etiqueta",
             color_discrete_map={
                 "OK":      "#10b981",
                 "ALERTA":  "#f59e0b",
@@ -841,7 +1191,33 @@ elif st.session_state.df_resumen is not None:
             title="Materiales con diferencias por tienda",
             labels={"tienda": "Tienda", "total_diffs": "Materiales con diferencias"},
         )
+        fig.update_traces(
+            textposition="outside",
+            cliponaxis=False,
+            hovertemplate=(
+                "%{x}<br>Materiales con diferencias: "
+                "%{customdata[0]:,}<extra></extra>"
+            ),
+        )
         fig.update_layout(xaxis_title="Tienda", yaxis_title="Materiales")
+
+        if supera_umbral:
+            fig.add_hline(
+                y=_UMBRAL_DIFS,
+                line_dash="dash",
+                line_color="#6b7280",
+                annotation_text=f"Umbral {_UMBRAL_DIFS}",
+                annotation_position="top right",
+            )
+            fig.update_yaxes(range=[0, max_diffs * 1.1])
+            st.caption(
+                f"Escala automática (máximo {max_diffs:,}). "
+                f"Línea punteada = umbral {_UMBRAL_DIFS}."
+            )
+        else:
+            fig.update_yaxes(range=[0, _UMBRAL_DIFS])
+            st.caption(f"Escala fija 0–{_UMBRAL_DIFS}.")
+
         st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("---")
