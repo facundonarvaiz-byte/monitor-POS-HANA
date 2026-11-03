@@ -114,7 +114,7 @@ Dentro de la app:
 1. **🌐 Ambiente** — Switch Producción / Test en la barra lateral. Al cambiar, recarga el resumen desde el HANA correspondiente y resetea la vista. En Test se muestra un banner de advertencia.
 2. **Resumen** — Gráfico de barras y listado por tienda con el total de diferencias (escala fija 0–300 cuando el máximo no supera 300; si lo supera, autoescala con línea punteada en el umbral 300)
 3. **Ver detalle →** — Grilla de diferencias para una tienda (hasta 20.000 filas en pantalla; el CSV exporta todo)
-4. **🔀 POS vs HANA x EAN** — Resumen por tienda de EAN **Solo POS** (sin Solo HANA ni Match) y detalle solo de EAN Solo POS, con export CSV
+4. **🔀 POS vs HANA x EAN** — Resumen por tienda de EAN **Solo POS** (sin Solo HANA ni Match) con la misma escala 0–300 y línea de umbral, y detalle solo de EAN Solo POS, con export CSV
 5. **🔄 Actualizar datos** — Recarga el resumen o el detalle según la vista activa
 6. **⬆️ Cargar Postgres** (solo gestor) — Lee el PostgreSQL de la(s) tienda(s) y actualiza `POS_STAGING` en el ambiente activo
 7. **Push cambios (tienda)** (solo gestor, con tienda seleccionada) — Encola los cambios hacia el POS, espera la confirmación asíncrona y recarga `POS_STAGING` desde PostgreSQL al terminar

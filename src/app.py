@@ -995,19 +995,46 @@ elif st.session_state.ver_ean:
                     "se regenera por ventanas. Reintentá con **🔄 Actualizar datos**."
                 )
 
+            df_plot_ean = df_res_ean.sort_values("solo_pos", ascending=False).copy()
+            max_ean = int(df_plot_ean["solo_pos"].max())
+            supera_umbral_ean = max_ean > _UMBRAL_DIFS
+            df_plot_ean["etiqueta"] = df_plot_ean["solo_pos"].apply(
+                lambda v: "" if v == 0 else f"{int(v):,}"
+            )
+
             fig_ean = px.bar(
-                df_res_ean.sort_values("solo_pos", ascending=False),
+                df_plot_ean,
                 x="tienda",
                 y="solo_pos",
+                text="etiqueta",
                 title="EANs Solo POS por tienda",
                 labels={"tienda": "Tienda", "solo_pos": "EANs Solo POS"},
                 color_discrete_sequence=["#f59e0b"],
             )
+            fig_ean.update_traces(textposition="outside", cliponaxis=False)
             fig_ean.update_layout(
                 xaxis_title="Tienda",
                 yaxis_title="EANs Solo POS",
                 showlegend=False,
             )
+
+            if supera_umbral_ean:
+                fig_ean.add_hline(
+                    y=_UMBRAL_DIFS,
+                    line_dash="dash",
+                    line_color="#6b7280",
+                    annotation_text=f"Umbral {_UMBRAL_DIFS}",
+                    annotation_position="top right",
+                )
+                fig_ean.update_yaxes(range=[0, max_ean * 1.1])
+                st.caption(
+                    f"Escala automática (máximo {max_ean:,}). "
+                    f"Línea punteada = umbral {_UMBRAL_DIFS}."
+                )
+            else:
+                fig_ean.update_yaxes(range=[0, _UMBRAL_DIFS])
+                st.caption(f"Escala fija 0–{_UMBRAL_DIFS}.")
+
             st.plotly_chart(fig_ean, use_container_width=True)
 
             st.markdown("---")
