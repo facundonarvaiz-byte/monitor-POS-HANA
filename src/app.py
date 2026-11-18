@@ -19,6 +19,8 @@ from hana_queries import (
     get_cp_logs,
     get_resumen_ean,
     get_detalle_ean,
+)
+from pusher import (
     contar_materiales_push,
     push_from_monitor,
     estado_push,

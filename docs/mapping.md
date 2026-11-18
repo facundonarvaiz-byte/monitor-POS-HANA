@@ -5,6 +5,8 @@
 > **Propósito:** Documentar el mapeo de datos entre SAP HANA y PostgreSQL para el monitor de comparación de materiales.  
 > **Contexto:** Proyecto Cencosud Colombia — integración SAP → POST (punto de venta).
 
+> ⚠️ **Documento histórico parcialmente desactualizado.** El código ejecutable es `src/*`. Para el push actual ver la sección 8.
+
 ---
 
 ## Índice
@@ -329,29 +331,17 @@ streamlit run src/app.py
 
 ## 8. Corrección de datos (Push)
 
-### 8.1 Modo actual: UPDATE directo en PostgreSQL
+### 8.1 Push asíncrono vía SP
 
-El push de correcciones se realiza mediante **UPDATE directo** en la tabla de PostgreSQL.
+El push se ejecuta desde `src/pusher.py` llamando al SP:
 
-**Flujo:**
-1. El usuario selecciona las diferencias a corregir (Pestaña Corrección)
-2. Marca los campos y confirma
-3. Click en "Aplicar correcciones"
-4. Se ejecuta un UPDATE por cada combinación SKU+Tienda+campo
-5. Se muestra el resultado (éxitos/errores)
-
-**Precaución:** Siempre revisar los datos antes de aplicar. La interfaz pide confirmación explícita.
-
-### 8.2 Modo futuro: API REST
-
-Cuando esté disponible el endpoint de API, se puede activar el modo `PushAPI`:
-
-```python
-# En pusher.py
-pusher = crear_pusher(modo="api")  # Cambiar de "directo" a "api"
+```sql
+CALL "Z_NCR_CO"."Z_NCRCO.Pos_staging::PUSH_FROM_MONITOR"('E018')
 ```
 
-### 8.3 Campos corregibles
+El SP **solo encola** los materiales en `Z_NCR_CO.ZSD_PUSH_LOCAL_ENTRY`. El POS los procesa de forma asíncrona y deja el resultado en `Z_NCR_CO.ZSD_PUSH_HIST_V3`. La app consulta el estado cada 30 s y, cuando el POS confirma, recarga `POS_STAGING` desde PostgreSQL.
+
+### 8.2 Campos corregibles
 
 | Campo | Columna en POST | Tipo |
 |-------|----------------|------|
@@ -394,10 +384,7 @@ Seguir estos pasos:
    )
    ```
 
-4. **`src/pusher.py`** — Agregar el mapeo en `campo_a_columna`:
-   ```python
-   "Mi Campo": "mi_campo",
-   ```
+4. Si el campo debe pushearse, verificar que la vista `API_ArticulosJson_POS_ACTIVOS_PUSH_MASIVO` lo incluya; no hay mapeo manual en Python.
 
 5. **`docs/mapping.md`** — Actualizar la tabla de mapeo
 
@@ -439,7 +426,7 @@ El monitor está configurado para Colombia. Para adaptarlo a otro país:
 | `src/hana_queries.py` | Queries a HANA |
 | `src/post_queries.py` | Queries a PostgreSQL |
 | `src/comparator.py` | Lógica de comparación |
-| `src/pusher.py` | Push de correcciones |
+| `src/pusher.py` | Push al POS (SP + seguimiento) |
 | `docs/mapping.md` | **Este documento** |
 
 ### 10.3 Tecnologías

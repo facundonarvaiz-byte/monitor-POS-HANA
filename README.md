@@ -173,8 +173,9 @@ monitor-post-hana/
 ├── src/
 │   ├── app.py                 # Dashboard Streamlit (login gestor/revisor)
 │   ├── config.py              # Conexión HANA + gestor de tiendas
-│   ├── hana_queries.py        # Consultas HANA (resumen, detalle, push al POS)
-│   └── post_queries.py        # Carga PostgreSQL → POS_STAGING
+│   ├── hana_queries.py        # Consultas HANA (resumen, detalle)
+│   ├── post_queries.py        # Carga PostgreSQL → POS_STAGING
+│   └── pusher.py              # Push al POS (SP + seguimiento asíncrono)
 ├── stores.json                # Conexiones PostgreSQL por tienda (gitignored)
 ├── stores-test.json           # Conexiones PostgreSQL tiendas de test (gitignored)
 ├── .env                       # Credenciales HANA (prod/test) + claves dashboard (gitignored)
@@ -207,5 +208,4 @@ Para tiendas de test, agregar la entrada en `stores-test.json` (y habilitarla en
 
 - El **push al POS es asíncrono**: el SP `PUSH_FROM_MONITOR` solo encola los materiales; el POS los procesa después. La demora observada es de **~30–50 minutos**. El dashboard consulta el estado cada 30 s y, cuando el POS confirma, recarga `POS_STAGING` desde PostgreSQL automáticamente.
 - La vista por EAN (`POS_vs_HANAxEAN_Ale`) se regenera por ventanas en HANA. Si una tienda aparece como `ERROR` en el resumen, reintentar con **🔄 Actualizar datos**.
-- `src/pusher.py` es **WIP** (push por API REST) y no está conectado al dashboard.
 - `docs/mapping.md` y `docs/spec_hana_views.md` están desactualizados; ver `AGENTS.md`.
