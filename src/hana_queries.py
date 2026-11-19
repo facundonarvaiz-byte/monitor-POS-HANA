@@ -34,6 +34,13 @@ _TABLA_POS_STAGING_LOG = '"Z_NCR_CO"."Z_NCRCO.Pos_staging::POS_STAGING_LOG"'
 # Tabla de logs CP_CVE
 _TABLA_CP_LOGS = '"Z_NCR_CO"."Z_NCRCO.CP_CVE::CP_LOGS"'
 
+# Vista de destinatarios del correo diario (la misma que usa el reporte
+# Log_Kafka_err en XSJS: Z_NCRCO.Log_views.Dashboard_Mail/
+# Log_ReportMailer_Dashboard_DEST).
+_VISTA_DESTINATARIOS_EMAIL = (
+    '"_SYS_BIC"."Z_NCRCO.Log_views.Dashboard_Mail/'
+    'Log_ReportMailer_Dashboard_DEST"'
+)
 
 
 def _sql_resumen_tienda(tienda: str) -> str:
@@ -280,6 +287,56 @@ def get_cp_logs(ambiente: str, limite: int = 200) -> pd.DataFrame:
     """
     logger.info("Ejecutando query HANA [%s] (logs CP_CVE), limite=%s...", ambiente, limite)
     return pd.read_sql(text(query), db.get_hana(ambiente))
+
+
+def get_destinatarios_email(ambiente: str) -> list[str]:
+    """
+    Destinatarios del correo diario desde la vista compartida de HANA.
+
+    La vista es la misma que usa el reporte Log_Kafka_err
+    (`Z_NCRCO.Log_views.Dashboard_Mail/Log_ReportMailer_Dashboard_DEST`);
+    la columna `DESTINATION` trae las direcciones. Se deduplican sin
+    distinguir mayúsculas y se descartan las vacías.
+
+    Si la vista no existe, está vacía o el usuario no tiene permisos, el
+    correo diario no se envía (ver scripts/daily_email.py).
+    """
+    ambiente = validar_ambiente(ambiente)
+    query = (
+        f'SELECT DISTINCT "DESTINATION" AS destinatario '
+        f"FROM {_VISTA_DESTINATARIOS_EMAIL}"
+    )
+    logger.info(
+        "Ejecutando query HANA [%s] (destinatarios email)...", ambiente
+    )
+    df = pd.read_sql(text(query), db.get_hana(ambiente))
+    if df.empty:
+        return []
+
+    vistos = set()
+    destinatarios = []
+    for valor in df["destinatario"].dropna().astype(str):
+        direccion = valor.strip()
+        clave = direccion.lower()
+        if not direccion:
+            continue
+        if "@" not in direccion:
+            logger.warning(
+                "get_destinatarios_email [%s]: dirección inválida %r (se omite)",
+                ambiente,
+                direccion,
+            )
+            continue
+        if clave not in vistos:
+            vistos.add(clave)
+            destinatarios.append(direccion)
+
+    logger.info(
+        "get_destinatarios_email [%s]: %d destinatario(s)",
+        ambiente,
+        len(destinatarios),
+    )
+    return destinatarios
 
 
 # ============================================================

@@ -118,6 +118,65 @@ Dentro de la app:
 5. **🔄 Actualizar datos** — Recarga el resumen o el detalle según la vista activa
 6. **⬆️ Cargar Postgres** (solo gestor) — Lee el PostgreSQL de la(s) tienda(s) y actualiza `POS_STAGING` en el ambiente activo
 7. **Push cambios (tienda)** (solo gestor, con tienda seleccionada) — Encola los cambios hacia el POS, espera la confirmación asíncrona y recarga `POS_STAGING` desde PostgreSQL al terminar
+8. **Correo diario** — Un cron de lunes a viernes a las 08:40 envía por XSJS el resumen principal (KPIs, gráfico y tabla por tienda) a los destinatarios de la vista HANA de `Dashboard_Mail`
+
+## Correo diario (lunes a viernes 08:40)
+
+`scripts/daily_email.py` consulta `get_resumen_tiendas("prod")`, genera un PNG con el
+gráfico de "Materiales con diferencias por tienda" y envía un correo HTML a través del
+endpoint XSJS de HANA `xsjs/send_monitor_email.xsjs` (usa `$.net.Mail`; el relay SMTP
+lo configura HANA).
+
+- **Remitente**: fijo `errores.ncr@easy.com.ar` (el XSJS rechaza otro).
+- **Destinatarios**: se leen de la vista HANA compartida
+  `Z_NCRCO.Log_views.Dashboard_Mail/Log_ReportMailer_Dashboard_DEST` (columna
+  `DESTINATION`). Si no devuelve direcciones, el correo no se envía.
+  `--to` permite una prueba puntual.
+- **Envío**: `EMAIL_XSJS_URL` con Basic Auth usando `HANA_USER`/`HANA_PASSWORD`.
+- **TLS**: `EMAIL_XSJS_VERIFY_TLS=0` si el certificado del XS es interno/self-signed.
+
+Vista previa local (no envía):
+
+```powershell
+venv\Scripts\python scripts\daily_email.py --dry-run
+# genera logs/email_preview.html y logs/grafico_resumen.png
+```
+
+Prueba de envío a un solo destinatario:
+
+```powershell
+venv\Scripts\python scripts\daily_email.py --to mi.correo@easy.com.ar
+```
+
+### Desplegar el XSJS en HANA
+
+`xsjs/send_monitor_email.xsjs` **no se despliega con `deploy.ps1`**: se sube una vez al
+paquete XS Classic de HANA prod (`hl0-db`) en `Z_NCRCO/Pos_staging/` con el XS IDE
+(`http://hl0-db.cencosud.corp:8000/sap/hana/xs/ide/`). La URL queda
+`https://hl0-db.cencosud.corp:4300/Z_NCRCO/Pos_staging/send_monitor_email.xsjs`
+(también responde por HTTP en el puerto 8000). El paquete debe exigir Basic Auth
+en su `.xsaccess` (no sobreescribir uno existente sin revisarlo):
+
+```json
+{
+  "exposed": true,
+  "authentication": [{"method": "Basic"}],
+  "prevent_xsrf": true
+}
+```
+
+La URL final se configura en `EMAIL_XSJS_URL`; el usuario `HANA_USER` debe tener
+permiso sobre el paquete XS.
+
+El cron del server (dentro de la ventana 08:00–19:01 de la VM) ejecuta:
+
+```cron
+40 8 * * 1-5 root /opt/pyapps/monitor-post-hana/venv/bin/python /opt/pyapps/monitor-post-hana/scripts/daily_email.py >> /opt/pyapps/monitor-post-hana/logs/daily_email.log 2>&1
+```
+
+El correo incluye la línea "Última carga de staging" (desde `POS_STAGING_LOG`) y la columna
+"Últ. mod. POS" por tienda, para detectar si salió antes de que terminara la carga diaria
+de las 08:10. Los fines de semana no se envía porque la VM está apagada.
 
 ## Despliegue (servidor intranet g100603aws079 / 172.23.18.102)
 
@@ -127,6 +186,7 @@ Dentro de la app:
 - Servidor: Apache reverse proxy → Streamlit `127.0.0.1:8501` (websockets incluidos)
 - Servicio systemd: `monitor-post-hana` (log de deploy: `/var/log/monitor-post-hana-deploy.log`)
 - Carga diaria automática: cron a las **08:10** hora local (11:10 UTC), **de lunes a viernes** (la VM no se enciende los fines de semana), con `daily_staging.py` y log en `logs/daily_staging.log`
+- Correo diario: cron a las **08:40** hora local, **de lunes a viernes**, con `daily_email.py` y log en `logs/daily_email.log`
 
 ### Cómo publicar un cambio
 
@@ -142,12 +202,13 @@ servicio automáticamente. Alternativa manual: `git push origin master; git push
 
 En el server, en `/opt/pyapps/monitor-post-hana/`, con permisos `root:root 600`:
 
-- `.env` — HANA prod + `HANA_TEST_*` + `GESTOR_PASS`/`REVISOR_PASS` (las claves reales del dashboard)
+- `.env` — HANA prod + `HANA_TEST_*` + `GESTOR_PASS`/`REVISOR_PASS` (las claves reales del dashboard) + `EMAIL_XSJS_URL`/`EMAIL_XSJS_VERIFY_TLS` (correo diario)
 - `stores.json` — conexiones PostgreSQL por tienda (producción)
 - `stores-test.json` — conexiones PostgreSQL de las tiendas de test
 
 Para cambiar las claves del dashboard, o habilitar el switch Test en el server, editar el `.env` /
-subir `stores-test.json` y `systemctl restart monitor-post-hana`.
+subir `stores-test.json` y `systemctl restart monitor-post-hana`. Los cambios de `EMAIL_XSJS_URL` /
+`EMAIL_XSJS_VERIFY_TLS` los toma el cron en la siguiente ejecución (no requieren reiniciar el servicio).
 
 ### Agregar una tienda en producción
 
@@ -169,7 +230,10 @@ monitor-post-hana/
 │   └── POS_STAGING_LOG.hdbtable
 ├── scripts/
 │   ├── daily_staging.py       # Carga POS_STAGING (todas las tiendas)
+│   ├── daily_email.py         # Correo diario (resumen + gráfico vía XSJS)
 │   └── deploy.ps1             # Deploy: GitHub + servidor intranet
+├── xsjs/
+│   └── send_monitor_email.xsjs  # Endpoint XSJS que envía el correo con $.net.Mail
 ├── src/
 │   ├── app.py                 # Dashboard Streamlit (login gestor/revisor)
 │   ├── config.py              # Conexión HANA + gestor de tiendas
